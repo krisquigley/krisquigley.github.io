@@ -2,6 +2,12 @@
 # Compass
 ###
 
+activate :blog do |blog|
+  # set options on blog
+  blog.paginate = true
+  blog.layout = "blog_layout"
+end
+
 # Change Compass configuration
 # compass_config do |config|
 #   config.output_style = :compact

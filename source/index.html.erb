@@ -1,48 +1,31 @@
 ---
-title: Kris Quigley - Ruby on Rails Developer
+pageable: true
+per_page: 10
 ---
-<div class="row">
-  <div class="col-xs-12 site">
-    <h1 class="site__heading">Think of a decent title</h1>
-    <hr class="site__rule">
-  </div>
+<div class="col-xs-12 col-sm-9 col-sm-pull-3 blog__article">
+    <% if paginate && num_pages > 1 %>
+    <p>Page <%= page_number %> of <%= num_pages %></p>
+
+    <% if prev_page %>
+      <p><%= link_to 'Previous page', prev_page %></p>
+    <% end %>
+  <% end %>
+
+  <% page_articles.each_with_index do |article, i| %>
+    <h3>
+      <%= link_to article.title, article %> 
+      <span>
+        <%= article.date.strftime('%b %e') %>
+      </span>
+    </h3>
+    <p><%= article.data.intro %></p>
+  <% end %>
+
+  <% if paginate %>
+    <% if next_page %>
+      <p><%= link_to 'Next page', next_page %></p>
+    <% end %>
+  <% end %>
 </div>
-<div class="row">
-  <div class="col-xs-12 col-sm-3 col-sm-push-9 site__aside">
-    <aside>
-      <p>I'm Kris, a Ruby on Rails dev and father based in Leeds.  </p>
-    </aside>
-  </div>
-  <div class="col-xs-12 col-sm-9 col-sm-pull-3 blog__article">
-    <article>
-      <header class="blog__article__header">
-        <small class="blog__article__header__date">18 April, 2015 <span class="glyphicon glyphicon-time" aria-hidden="true"></span></small>
-        <h2 class="blog__article__header__heading">Five points to bear in mind when implementing a new feature</h2>
-        <h4><i>...and just developing code in general</i></h4>
-        <p>Introduction to the post</p>
-      </header>
-      <main>
-        <section>
-          <h3>If it fails, is there a way for it to try again?</h3>
-          <p>- this is mostly aimed at implementing, or delegating tasks to workers</p>
-        </section>
-        <section>
-          <h3>Are there any single points of failures?</h3>
-          <p>- if an API or service become unavailable would it stop the rest of the class from finishing what it needs to do?<br/> -or can it complete and come back to that later? </p>
-        </section>
-        <section>
-          <h3>If it fails, is there a human readable error/explanation?</h3>
-          <p>- are you rescuing possible failpoints and giving an explanation?</p>
-        </section>
-        <section>
-          <h3>Are there comments within the code to describe what is happening?</h3>
-          <p>- what if you were to move onto another project/company or if you become ill, can someone other than yourself understand what is happening?</p>
-        </section>
-        <section>
-          <h3>Are the tests adequate?</h3>
-          <p>- do they only check for passing cases<br/> - do they check for failures too?</p>
-        </section>
-      </main>
-    </article>
-  </div>
-</div>
+
+

@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+  <head>
+    <%= partial 'head' %>
+  </head>
+  <body>
+    <%= partial 'header' %>
+    <div class="container">
+      <main>
+        <%= partial 'site_title' %>
+        <div class="row">
+          <%= partial 'aside' %>
+          <div class="col-xs-12 col-sm-9 col-sm-pull-3 blog__article">
+            <article>
+              <header class="blog__article__header">
+                <small class="blog__article__header__date"><%= current_article.date %> <span class="glyphicon glyphicon-time" aria-hidden="true"></span></small>
+                <h2 class="blog__article__header__heading"><%= current_article.title %></h2>
+                <h4><i><%= current_article.data.subtitle %></i></h4>
+                <p><%= current_article.data.intro %></p>
+              </header>
+              <hr/>
+              <%= yield %>
+            </article>
+            <div id="disqus_thread"></div>
+            <script type="text/javascript">
+                /* * * CONFIGURATION VARIABLES * * */
+                var disqus_shortname = 'krisquigleycouk';
+                
+                /* * * DON'T EDIT BELOW THIS LINE * * */
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          </div>
+        </div>
+      </main>
+      <%= partial "footer" %>
+    </div>
+  </body>
+</html>
