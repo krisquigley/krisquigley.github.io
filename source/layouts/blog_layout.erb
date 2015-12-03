@@ -13,7 +13,7 @@
           <div class="col-xs-12 col-sm-9 col-sm-pull-3 blog__article">
             <article>
               <header class="blog__article__header">
-                <small class="blog__article__header__date"><%= current_article.date %> <span class="glyphicon glyphicon-time" aria-hidden="true"></span></small>
+                <small class="blog__article__header__date"><%= current_article.date.strftime('%b %e, %Y') %> <span class="glyphicon glyphicon-time" aria-hidden="true"></span></small>
                 <h2 class="blog__article__header__heading"><%= current_article.title %></h2>
                 <h4><i><%= current_article.data.subtitle %></i></h4>
                 <p><%= current_article.data.intro %></p>
