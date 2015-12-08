@@ -7,6 +7,8 @@ gem "middleman", "~>3.4"
 gem 'middleman-gh-pages'
 gem "jquery-middleman"
 gem "middleman-blog"
+gem "redcarpet"
+gem "middleman-syntax"
 gem 'nokogiri'
 
 # Live-reloading plugin
