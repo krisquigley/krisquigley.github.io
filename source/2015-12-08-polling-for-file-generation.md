@@ -1,7 +1,7 @@
 ---
 title: Polling for File Generation
 subtitle: ...from a worker
-intro: I myself often forget how to do all the ajax trickery in Rails and google isn't always so cooporative for me in this area.  Therefore, I thought I'd share my process with you and also leave a reminder for myself when I forget how to do it again.
+intro: I myself, often forget how to do all the Ajax trickery in Rails and Google isn't always the most helpful resource for me in this area.  Therefore, I thought I'd share my process with you and also leave a reminder for myself when I forget how to do it again.
 date: 2015-12-08
 tags: rails, ruby, background-worker
 published: true
@@ -10,8 +10,9 @@ published: true
 ### Background of the Problem
 
 ![Image of Orders Table](images/orders.png)
+*A list of orders*
 
-We are generating a CSV of orders for the vendor which at the moment isn't a big problem as we do not have many vendors, or many orders, so the CSV will generate relatively quickly.   However, we know that as suppliers and orders are bound to increase, we need to find a better solution to generate larger files without blocking our precious ruby processes.
+We are currently generating a CSV of orders for a vendor; which at the moment isn't a big problem as we do not have many vendors, or many orders, so the CSV will generate relatively quickly.   
 
 ```ruby
 class OrdersController < ApplicationController
@@ -34,7 +35,9 @@ class OrdersController < ApplicationController
 end
 ```
 
-Obviously, this is where workers come in to do all the heavy lifting. By putting this work in a background process so that we can free up our ruby processes again.
+However, we know that suppliers and orders are bound to increase, therefore we need to find a better solution for generating files which will scale without blocking our precious ruby processes.
+
+Obviously, this is where workers come in to do all the heavy lifting. By putting this work in a background process, we can free up our ruby processes again.
 
 ```ruby
 class OrdersController < ApplicationController
@@ -48,11 +51,11 @@ class OrdersController < ApplicationController
 end
 ```
 
-However, how can I tell my controller that the file has finished being generated and send it back to the user?
+However, how can I tell the controller that the file has finished being generated so that it can be sent back to the user?
 
 ### The Implementation
 
-It's at this point where we need to do some polling, and the purpose of this article.  I myself often forget how to do all the ajax trickery in Rails and google isn't always so cooporative for me in this area.  Therefore, I thought I'd share my process with you and also leave a reminder for myself when I forget how to do it again.
+It's at this point that we need to do some polling, and the purpose of writing this article. 
 
 Now that we have the controller calling the worker to generate the file we need a way of tracking the file generated.  As we are not using a model for this we don't have any handy IDs to keep track, this is where I like to use timestamps instead.
 
@@ -79,7 +82,7 @@ class GenerateCSVJob
 end
 ```
 
-Now that we have a unique way of identifying the file we have just generated, we need to pass this back to the user for them to download.
+Now that we have a unique way of identifying the file we have just generated, we have a clear way of identifying the file, in order to pass it back to the user.
 
 ```ruby
 class OrdersController < ApplicationController
@@ -95,7 +98,7 @@ class OrdersController < ApplicationController
 end
 ```
 
-However, it is much cleaner if we just send back the entire URL for them to poll instead.
+However, it is much cleaner if we just send back the entire URL for them to poll instead.  At this point, that I want to clean up the `OrdersController` and move the logic into it's own controller instead.
 
 ```ruby
 class CSVExportsController < ApplicationController
@@ -113,7 +116,26 @@ class CSVExportsController < ApplicationController
 end
 ```
 
-This can then be used to test for the generation of the file, and if it exists again return a URL to the direct file.
+Now we need to add an action to check whether the file exists yet or not, and if it does, then send it back to the user.
+
+```ruby
+class CSVExportsController < ApplicationController
+  def create
+    #...
+  end
+
+  def show
+    timestamp = params[:id]
+    if File.exist?("/tmp/#{timestamp}_order.csv") 
+      send_file File.open("/tmp/#{timestamp}_order.csv") }
+    else
+      head :not_found
+    end
+  end
+end
+```
+
+However, I prefer to send a link back to the user which they can then use to download the file whenever they want.
 
 ```ruby
 class CSVExportsController < ApplicationController
@@ -175,7 +197,7 @@ But of course, none of this will work without the Ajax to marry it all up.
 ) jQuery
 ```
 
-The great thing about this approach is that we can add other formats to the respond to, if we ever need to generate other types of files, for example a PDF of order lables for the supplier to print and stick on their orders.
+The great thing about sending a URL back rather than just the file, is that we can add other formats to the `respond_to` block, if we ever need to generate other types of files. For example a PDF of order labels for the supplier to print and stick on their orders.
 
 ```ruby
 class FileExportsController < ApplicationController
@@ -200,6 +222,9 @@ class FileExportsController < ApplicationController
   end
 end
 ```
+If you know of an alternative appraoch to achieving the same result, then please let me know in the comments below.
+
+### Resources
 
 An example project with all the relavent code can be found under my [github](https://github.com/krisquigley/poll-worker-for-changes) account.
 
