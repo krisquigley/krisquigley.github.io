@@ -9,7 +9,7 @@ published: true
 
 ### Background of the Problem
 
-![Image of Orders Table](images/orders.png)
+![Image of Orders Table](orders.png)
 *A list of orders*
 
 We are currently generating a CSV of orders for a vendor; which at the moment isn't a big problem as we do not have many vendors, or many orders, so the CSV will generate relatively quickly.   
