@@ -9,21 +9,47 @@ h2
   margin-top: 0
 
 h3
+  margin-top: 5rem
   font-size: 2.5rem
+  margin-bottom: 1.5rem
 
 h4
   font-size: 2.2rem
 
+p > img
+  width: 100%
+
 .blog
+  &__index
+    &__heading
+      margin-top: 0
+      line-height: 1.3
+
+    &__date
+      font-weight: 300
+      font-size: 1.5rem
+
+    &__intro
+      margin-bottom: 3rem
+
   &__article
     &__header
-      margin-bottom: 4rem
+      margin-bottom: 8rem
 
       &__date
         text-transform: uppercase
 
       &__heading
-        text-transform: capitalize
+        margin-bottom: 0
+
+    &__subheading
+      font-style: italic
+      font-weight: 300
+      font-size: 2rem
+    
+    &__intro
+      font-weight: 300
+      margin-top: 1.5rem
 
     &__index
       &__heading
@@ -45,11 +71,24 @@ h4
     margin-top: 5.5rem 
     text-align: center
     text-transform: capitalize
+    font-family: 'great_vibesregular'
+    font-size: 7rem
+
+  &__aside
+    margin-bottom: 5rem
+    font-weight: 300
+
+    &__image
+      width: 80%
+      margin-left: 5%
+      border-radius: 50%
+      margin-bottom: 2rem
+      padding: 2px
+      border: 1px solid #ddd
 
 
   &__rule
-    margin: 6rem auto 8rem auto
-    width: 35%
+    margin: 6rem 0 8rem 0 
 
   &__footer
     margin: 3.5rem 0

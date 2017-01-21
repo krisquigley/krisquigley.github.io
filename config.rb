@@ -1,3 +1,7 @@
+activate :syntax
+set :markdown_engine, :redcarpet
+set :markdown, :fenced_code_blocks => true, :smartypants => true
+
 ###
 # Compass
 ###
@@ -6,6 +10,7 @@ activate :blog do |blog|
   # set options on blog
   blog.paginate = true
   blog.layout = "blog_layout"
+  blog.taglink = "categories/{tag}.html"
 end
 
 activate :syntax
@@ -14,9 +19,9 @@ set :markdown_engine, :redcarpet
 set :markdown, :fenced_code_blocks => true, :smartypants => true
 
 # Change Compass configuration
-# compass_config do |config|
-#   config.output_style = :compact
-# end
+compass_config do |config|
+  config.output_style = :compact
+end
 
 ###
 # Page options, layouts, aliases and proxies

@@ -16,9 +16,14 @@
           </div>
         </div>
         <div class="row">
-          <%= partial 'aside' %>
-          <div class="col-xs-12 col-sm-9 col-sm-pull-3 blog__article">
+          <div class="col-xs-12 col-sm-8 col-sm-push-2 blog__article">
             <article>
+              <header class="blog__article__header">
+                <small class="blog__article__header__date"><%= current_article.date.strftime('%b %e, %Y') %></small>
+                <h2 class="blog__article__header__heading"><%= current_article.title %></h2>
+                <span class="blog__article__subheading"><%= current_article.data.subtitle %></span>
+                <p class="blog__article__intro"><%= current_article.data.intro %></p>
+              </header>
               <%= yield %>
             </article>
             <div id="disqus_thread"></div>
