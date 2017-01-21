@@ -1,27 +1,48 @@
 ---
-title: Five steps to bear in mind when implementing a new feature
+title: PART 1 - Five points to bear in mind when implementing a new feature
 subtitle: ...and just developing code in general
 intro: Blah blah blah
 date: 2015-04-19
 tags: example
 ---
-<section>
-  <h3>If it fails, is there a way for it to try again?</h3>
-  <p>- this is mostly aimed at implementing, or delegating tasks to workers</p>
-</section>
-<section>
-  <h3>Are there any single points of failures?</h3>
-  <p>- if an API or service become unavailable would it stop the rest of the class from finishing what it needs to do?<br/> -or can it complete and come back to that later? </p>
-</section>
-<section>
-  <h3>If it fails, is there a human readable error/explanation?</h3>
-  <p>- are you rescuing possible failpoints and giving an explanation?</p>
-</section>
-<section>
-  <h3>Are there comments within the code to describe what is happening?</h3>
-  <p>- what if you were to move onto another project/company or if you become ill, can someone other than yourself understand what is happening?</p>
-</section>
-<section>
-  <h3>Are the tests adequate?</h3>
-  <p>- do they only check for passing cases<br/> - do they check for failures too?</p>
-</section>
+This mostly applies to passing information or working with external services. If you are trying to pass informaiton on do you have systems in place to retry the work again, say if an API or external service is not available?
+
+One example might be texting customers with delivery details of their recent purchase.After our app receives a delivery norification, we take the customers name and number, the courier and tracking URL.
+
+First we pass our tracking URL to goo.gl to shorten it, one for readability and two to reduce costs and number of messages received (for for older phones).  we then format the body of the message, including the information we previously stated and pass it to Twilio along with our destination number.
+
+```ruby
+Code example
+```
+
+But what would happen if Twilio's API was not available? Not a lot, apart from raising a warning that the connection timed out or was refused. How can we ensure that our text message is sent?
+
+We could implement a resuce to catch any errors and pass the arguments to the method once more.
+
+```ruby
+Code example
+```
+
+However, this could cause CPU thrashing and DOSing of twilio if the service is down for any length of time, there may also be many customers expecting to receive a text about their dorder.  Not to mention that furing this time we are using up previous ruby threads which could be used for processing new purchases.
+
+This is where a worker or job beocmes invaluable.  At Platform Q we use sidekiq which runs on redis.
+
+By passing this same code to a worker it can be processed outsie of our ruby threads and retired exponentially if there are any hiccups along the way (regardless of what that might be.)
+
+```ruby
+Code example
+```
+
+The advantage of exponential retries line in not hammering our redis server or DOSing Twilio.
+
+Furthermore, workers can be rate limited in instances where API limits might be a factor and you are processing a large volume. For this we use the Sidekiq::RateLimiter gem
+
+```ruby
+Code example
+```
+
+One thing you might have noticed and be wondering 'What happens if the goo.gl API is not available, will customers still be able to receive their tets?'
+
+**Good question!** This leads nicely onto the next point.
+
+### PART 2 - Are there any single points of failure?

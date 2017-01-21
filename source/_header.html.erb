@@ -1,9 +1,11 @@
-<header>
-  <nav class="navbar navbar-default">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="/">Kris Quigley</a>
+<% if current_page.url != '/' %>
+  <header>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/">Kris Quigley</a>
+        </div>
       </div>
-    </div>
-  </nav>
-</header>
+    </nav>
+  </header>
+<% end %>

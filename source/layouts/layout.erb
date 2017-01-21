@@ -7,7 +7,12 @@
     <%= partial 'header' %>
     <div class="container">
       <main>
-        <%= partial 'site_title' %>
+        <div class="row">
+          <div class="col-xs-12 site">
+            <h1 class="site__heading">Kris Quigley</h1>
+            <hr class="site__rule">
+          </div>
+        </div>
         <div class="row">
           <%= partial 'aside' %>
           <%= yield %>
