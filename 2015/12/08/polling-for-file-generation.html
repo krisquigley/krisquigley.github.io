@@ -9,31 +9,31 @@
 
 <!-- Use title if it's in the page YAML frontmatter -->
 <title>Polling for File Generation - Bits &amp; Bytes - Kris Quigley - Ruby on Rails Developer</title>
-<script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
 
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 
-<!-- Optional theme -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
-
-<!-- Latest compiled and minified JavaScript -->
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-
-<link href="/stylesheets/paper.min-2b8aa22d.css" rel="stylesheet" /><link href="/stylesheets/highlight-d2425cf7.css" rel="stylesheet" /><link href="/stylesheets/all-aa06791b.css" rel="stylesheet" />
+<link href="/stylesheets/paper.min-fa4b3427.css" rel="stylesheet" /><link href="/stylesheets/highlight-15c4871c.css" rel="stylesheet" /><link href="/stylesheets/all-13a717df.css" rel="stylesheet" />
 <script src="/javascripts/all-da39a3ee.js"></script>
 <link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" />
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32-2a4eb7c2.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16-435197d8.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab-79acb90b.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
   </head>
   <body>
-    <header>
-  <nav class="navbar navbar-default">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="/">Kris Quigley</a>
+      <header>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/">Kris Quigley</a>
+        </div>
       </div>
-    </div>
-  </nav>
-</header>
+    </nav>
+  </header>
     <div class="container">
       <main>
         <div class="row">
@@ -46,9 +46,9 @@
           <div class="col-xs-12 col-sm-8 col-sm-push-2 blog__article">
             <article>
               <header class="blog__article__header">
-                <small class="blog__article__header__date">Dec  8, 2015</small>
                 <h2 class="blog__article__header__heading">Polling for File Generation</h2>
-                <span class="blog__article__subheading">...from a worker</span>
+                <span class="blog__article__subheading">...from a worker</span><br/>
+                <small class="blog__article__header__date">Dec  8, 2015</small>
                 <p class="blog__article__intro">I myself, often forget how to do all the Ajax trickery in Rails and Google isn't always the most helpful resource for me in this area.  Therefore, I thought I'd share my process with you and also leave a reminder for myself when I forget how to do it again.</p>
               </header>
               <h3>Background of the Problem</h3>
@@ -76,7 +76,6 @@
   <span class="k">end</span>
 <span class="k">end</span>
 </code></pre>
-
 <p>However, we know that suppliers and orders are bound to increase, therefore we need to find a better solution for generating files which will scale without blocking our precious ruby processes.</p>
 
 <p>Obviously, this is where workers come in to do all the heavy lifting. By putting this work in a background process, we can free up our ruby processes again.</p>
@@ -90,7 +89,6 @@
   <span class="k">end</span>
 <span class="k">end</span>
 </code></pre>
-
 <p>However, how can I tell the controller that the file has finished being generated so that it can be sent back to the user?</p>
 
 <h3>The Implementation</h3>
@@ -119,7 +117,6 @@
   <span class="k">end</span>
 <span class="k">end</span>
 </code></pre>
-
 <p>Now that we have a unique way of identifying the file we have just generated, we have a clear way of identifying the file, in order to pass it back to the user.</p>
 <pre class="highlight ruby"><code><span class="k">class</span> <span class="nc">OrdersController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
   <span class="c1">#...</span>
@@ -133,7 +130,6 @@
   <span class="k">end</span>
 <span class="k">end</span>
 </code></pre>
-
 <p>However, it is much cleaner if we just send back the entire URL for them to poll instead.  At this point, that I want to clean up the <code>OrdersController</code> and move the logic into it&rsquo;s own controller instead.</p>
 <pre class="highlight ruby"><code><span class="k">class</span> <span class="nc">CSVExportsController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
   <span class="k">def</span> <span class="nf">create</span>
@@ -149,7 +145,6 @@
   <span class="k">end</span>
 <span class="k">end</span>
 </code></pre>
-
 <p>Now we need to add an action to check whether the file exists yet or not, and if it does, then send it back to the user.</p>
 <pre class="highlight ruby"><code><span class="k">class</span> <span class="nc">CSVExportsController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
   <span class="k">def</span> <span class="nf">create</span>
@@ -166,7 +161,6 @@
   <span class="k">end</span>
 <span class="k">end</span>
 </code></pre>
-
 <p>However, I prefer to send a link back to the user which they can then use to download the file whenever they want.</p>
 <pre class="highlight ruby"><code><span class="k">class</span> <span class="nc">CSVExportsController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
   <span class="k">def</span> <span class="nf">create</span>
@@ -188,43 +182,41 @@
   <span class="k">end</span>
 <span class="k">end</span>
 </code></pre>
-
 <p>But of course, none of this will work without the Ajax to marry it all up.</p>
 <pre class="highlight coffeescript"><code><span class="p">((</span><span class="nx">$</span><span class="p">)</span> <span class="o">-&gt;</span>
   <span class="nx">$</span> <span class="o">-&gt;</span>
-    <span class="c1"># Provide some context to the user so they know what is happening after we submit the form
-</span>    <span class="nx">$</span><span class="p">(</span><span class="s">'button[data-behavior="generate_csv"]'</span><span class="p">).</span><span class="na">click</span> <span class="o">-&gt;</span> 
+    <span class="c1"># Provide some context to the user so they know what is happening after we submit the form</span>
+    <span class="nx">$</span><span class="p">(</span><span class="s">'button[data-behavior="generate_csv"]'</span><span class="p">).</span><span class="na">click</span> <span class="o">-&gt;</span> 
       <span class="nx">$</span><span class="p">(</span><span class="s">'button[data-behavior="generate_csv"]'</span><span class="p">).</span><span class="na">hide</span><span class="p">()</span>
       <span class="nx">$</span><span class="p">(</span><span class="s">'div[data-behavior="generating_csv"]'</span><span class="p">).</span><span class="na">show</span><span class="p">()</span>
 
     <span class="nx">$</span><span class="p">(</span><span class="s">'form[data-attribute="generate_csv_form"]'</span><span class="p">).</span><span class="na">on</span> <span class="s">'ajax:success'</span><span class="p">,</span> <span class="p">(</span><span class="nx">e</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">xhr</span><span class="p">)</span> <span class="o">-&gt;</span>
-      <span class="c1"># Uncheck the checkboxes
-</span>      <span class="nx">$</span><span class="p">(</span><span class="s">'input:checkbox'</span><span class="p">).</span><span class="na">removeAttr</span><span class="p">(</span><span class="s">'checked'</span><span class="p">)</span>
+      <span class="c1"># Uncheck the checkboxes</span>
+      <span class="nx">$</span><span class="p">(</span><span class="s">'input:checkbox'</span><span class="p">).</span><span class="na">removeAttr</span><span class="p">(</span><span class="s">'checked'</span><span class="p">)</span>
 
-      <span class="c1"># This will be our URL to check if the file exists
-</span>      <span class="nx">url</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="na">url</span>
+      <span class="c1"># This will be our URL to check if the file exists</span>
+      <span class="nx">url</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="na">url</span>
 
-      <span class="c1"># Set up our polling object
-</span>      <span class="nx">poll</span> <span class="o">=</span> <span class="p">(</span><span class="nx">url</span><span class="p">)</span> <span class="o">-&gt;</span>
+      <span class="c1"># Set up our polling object</span>
+      <span class="nx">poll</span> <span class="o">=</span> <span class="p">(</span><span class="nx">url</span><span class="p">)</span> <span class="o">-&gt;</span>
         <span class="nx">$</span><span class="p">.</span><span class="na">ajax</span><span class="p">({</span>
           <span class="na">type</span><span class="o">:</span> <span class="s">"GET"</span><span class="p">,</span>
           <span class="na">dataType</span><span class="o">:</span> <span class="s">'json'</span><span class="p">,</span>
           <span class="na">url</span><span class="o">:</span>  <span class="nx">url</span><span class="p">,</span>
           <span class="na">error</span><span class="o">:</span> <span class="o">-&gt;</span>
-            <span class="c1"># If the file does not exist yet, try again
-</span>            <span class="nx">setTimeout</span> <span class="p">(</span> <span class="o">=&gt;</span> <span class="nx">poll</span><span class="p">(</span><span class="nx">url</span><span class="p">)</span> <span class="p">),</span> <span class="mi">5000</span>
+            <span class="c1"># If the file does not exist yet, try again</span>
+            <span class="nx">setTimeout</span> <span class="p">(</span> <span class="o">=&gt;</span> <span class="nx">poll</span><span class="p">(</span><span class="nx">url</span><span class="p">)</span> <span class="p">),</span> <span class="mi">5000</span>
           <span class="na">success</span><span class="o">:</span> <span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">status</span><span class="p">,</span> <span class="nx">xhr</span><span class="p">)</span> <span class="o">-&gt;</span>
-            <span class="c1"># Now that the file exists, populate the download link with the download URL and then show it
-</span>            <span class="nx">$</span><span class="p">(</span><span class="s">'div[data-behavior="generating_csv"]'</span><span class="p">).</span><span class="na">hide</span><span class="p">()</span>
+            <span class="c1"># Now that the file exists, populate the download link with the download URL and then show it</span>
+            <span class="nx">$</span><span class="p">(</span><span class="s">'div[data-behavior="generating_csv"]'</span><span class="p">).</span><span class="na">hide</span><span class="p">()</span>
             <span class="nx">$</span><span class="p">(</span><span class="s">'a[data-attribute="download_csv_link"]'</span><span class="p">).</span><span class="na">attr</span><span class="p">(</span><span class="s">"href"</span><span class="p">,</span> <span class="nx">data</span><span class="p">.</span><span class="na">file</span><span class="p">)</span>
             <span class="nx">$</span><span class="p">(</span><span class="s">'div[data-behavior="download_csv"]'</span><span class="p">).</span><span class="na">show</span><span class="p">()</span>
         <span class="p">})</span>
 
-      <span class="c1"># Start polling csv_export_path to see if the file exists yet
-</span>      <span class="nx">poll</span><span class="p">(</span><span class="nx">url</span><span class="p">)</span>
+      <span class="c1"># Start polling csv_export_path to see if the file exists yet</span>
+      <span class="nx">poll</span><span class="p">(</span><span class="nx">url</span><span class="p">)</span>
 <span class="p">)</span> <span class="nx">jQuery</span>
 </code></pre>
-
 <p>The great thing about sending a URL back rather than just the file, is that we can add other formats to the <code>respond_to</code> block, if we ever need to generate other types of files. For example a PDF of order labels for the supplier to print and stick on their orders.</p>
 <pre class="highlight ruby"><code><span class="k">class</span> <span class="nc">FileExportsController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
   <span class="k">def</span> <span class="nf">create</span>
@@ -248,7 +240,6 @@
   <span class="k">end</span>
 <span class="k">end</span>
 </code></pre>
-
 <p>If you know of an alternative appraoch to achieving the same result, then please let me know in the comments below.</p>
 
 <h3>Resources</h3>
@@ -256,7 +247,7 @@
 <p>An example project with all the relavent code can be found under my <a href="https://github.com/krisquigley/poll-worker-for-changes">github</a> account.</p>
 
             </article>
-            <div id="disqus_thread"></div>
+            <div id="disqus_thread" class="comments"></div>
             <script type="text/javascript">
                 /* * * CONFIGURATION VARIABLES * * */
                 var disqus_shortname = 'krisquigleycouk';
@@ -274,7 +265,7 @@
       </main>
       <hr/>
 <footer class="site__footer">
-  &copy; 2015 Kris Quigley
+  &copy; 2017 Kris Quigley
 </footer>
     </div>
   </body>

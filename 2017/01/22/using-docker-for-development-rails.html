@@ -1,0 +1,414 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+
+<!-- Always force latest IE rendering engine or request Chrome Frame -->
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+
+<!-- Use title if it's in the page YAML frontmatter -->
+<title>Using Docker For Development - Bits &amp; Bytes - Kris Quigley - Ruby on Rails Developer</title>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+<link href="/stylesheets/paper.min-fa4b3427.css" rel="stylesheet" /><link href="/stylesheets/highlight-15c4871c.css" rel="stylesheet" /><link href="/stylesheets/all-13a717df.css" rel="stylesheet" />
+<script src="/javascripts/all-da39a3ee.js"></script>
+<link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" />
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32-2a4eb7c2.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16-435197d8.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab-79acb90b.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+  </head>
+  <body>
+      <header>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/">Kris Quigley</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+    <div class="container">
+      <main>
+        <div class="row">
+  <div class="col-xs-12 site">
+    <h1 class="site__heading">Bits &amp; Bytes</h1>
+    <hr class="site__rule">
+  </div>
+</div>
+        <div class="row">
+          <div class="col-xs-12 col-sm-8 col-sm-push-2 blog__article">
+            <article>
+              <header class="blog__article__header">
+                <h2 class="blog__article__header__heading">Using Docker For Development</h2>
+                <span class="blog__article__subheading">...with Ruby on Rails</span><br/>
+                <small class="blog__article__header__date">Jan 22, 2017</small>
+                <p class="blog__article__intro">In the first part of this series, I am going to be talking about how to setup Docker for your development environment.  In part two, I shall be discussing how to prepare Docker for production and finally, part three will look at how to automate deployment.</p>
+              </header>
+              <h3>Why use Docker?</h3>
+
+<p>If you aren&rsquo;t entirely sure what Docker is exactly, or what benefit it can bring to your work flow.  Then I recommend that you read the article <a href="https://www.airpair.com/docker/posts/8-proven-real-world-ways-to-use-docker">8 Proven Real-World Ways to Use Docker</a>.</p>
+
+<p>A lot of what I have learnt throughout my experience with Docker has been through the help of the online community, therefore it is only right that I also share the source of those articles and forums which can be found in the references section below.</p>
+
+<h3>Docker Environment</h3>
+
+<p>First off, we need to install Docker before we can do anything.  In this article I will only be talking about the now recommended way of installing and running Docker, using Docker for X, <em>where X is the OS</em> rather than the old approach of using Docker toolbox.</p>
+
+<p>Please note, if you are running Windows 10 Home, then you will need to be using Docker toolbox rather than Docker for Windows. As Docker for Windows relies on Hyper-V for virtualisation which only Windows 10 Pro provides.  If you can afford it, I recommend upgrading to the Pro version of Windows in this instance, as it is well worth it.</p>
+
+<h4>Docker for Windows / Mac / Linux</h4>
+
+<p>With that out of the way, head on over to <a href="https://www.docker.com/products/docker">Docker</a> and download Docker for Windows / Mac / Linux.  In this instance, I shall be installing and running Docker for Windows, however, the contents of this document are the same regardless of which OS you are running (hence the beauty of Docker).</p>
+
+<h4>Dockerfile</h4>
+
+<p>Once you have Docker installed, you are ready to start integrating it into your project, or should I say, integrate your project into Docker&hellip;</p>
+
+<p>Docker uses what it calls images; images are effectively snapshots of data, be they complete OS&rsquo;s in themselves, services or just files in their own right.  More often than not, images contain a guest OS with minimal libraries/packages installed (in order to keep the weight down) and a preconfigured service for you to use with other Docker images.</p>
+
+<p>Most official images can be found on Docker&rsquo;s own service called <a href="https://hub.docker.com/explore/">Docker Hub</a>, which is akin to GitHub for Git.</p>
+
+<p>Now, we can either use these images straight out of the box, making no changes to them in order to provide a service for us to interact with, e.g. Redis, Postgres or MongoDB; or we can use it as a base image to build upon.</p>
+
+<p>We are going to do both, but firstly we are going to take an image as our base image, configure it and build our project into it.  This is where the Dockerfile comes into play.  The Dockerfile is where we define which base image we would like to use, what extra packages we might want to install; copy our project files into and then build it into its own bespoke image to later distribute, if we so wish.</p>
+
+<h3>Development Dockerfile</h3>
+
+<p>As this is an article for a Dockerised Rails app, we will be using a Ruby base image to start with.  However, the standard Ruby image is rather bloated with many packages that aren&rsquo;t needed for more projects.  Therefore, we will be using the slim variant and installing any extra packages that we need.</p>
+
+<p>Create the file, <code>Dockerfile</code> and save it to the root of your project.  The first line we are going to add will be the following:</p>
+
+<p><code>FROM ruby:2.4-slim</code></p>
+
+<p>This not only reduces bloat in our own Docker image, but saves local disk space and bandwidth.</p>
+
+<p>Next we will install any additional packages we need for our project.  As my rails app makes use of Postgres as it&rsquo;s database, I will need to install the <code>libpq-dev</code> package in order to compile the postgres extensions needed by the <code>pg</code> gem.</p>
+<pre class="highlight plaintext"><code>RUN apt-get update
+RUN apt-get install -y build-essential git libpq-dev
+</code></pre>
+<p>The <code>RUN</code> command tells Docker that you want to run a command within the image.</p>
+
+<p>After this, we will tell Docker which folder to mount our app in and copy the contents of our project across.</p>
+<pre class="highlight plaintext"><code>ENV app /app
+RUN mkdir $app
+WORKDIR $app
+COPY . $app
+</code></pre>
+<p>Finally, we are going to set the <code>BUNDLE_PATH</code> to a custom location so that Bundler will install them in an external location.</p>
+
+<p><code>ENV BUNDLE_PATH /box</code></p>
+
+<p>We do this as Docker images are stateless, and we do not want to be reinstalling our Gems every time we make some changes to our image.  Why do we point this to <code>/box</code> and how do this become an external location you might ask.  More will be revealed in the next section on Docker Compose.</p>
+
+<p>Your final <code>Dockerfile</code> should look like this:</p>
+<pre class="highlight plaintext"><code>FROM ruby:2.4-slim
+
+# Install basic packages
+RUN apt-get update
+RUN apt-get install -y build-essential nodejs git libpq-dev yarn
+
+ENV app /app
+RUN mkdir $app
+WORKDIR $app
+ADD . $app
+
+ENV BUNDLE_PATH /box
+</code></pre>
+<h3>Docker Compose</h3>
+
+<p>Docker Compose is a service provided by Docker as part of the installation as a means of booting and managing multiple Docker images at the same time, all in one place.</p>
+
+<h4>Development docker-compose file</h4>
+
+<p>To configure Docker Compose we need to create a <code>docker-compose.yml</code> file within the root of our project directory.  As can be determined from the extension, the file makes use of YAML.</p>
+
+<p>For the purpose of this article, we will be making use of version 2.1 of the Docker Compose syntax.  This should be defined at the top of the file.</p>
+
+<p><code>version: &#39;2.1&#39;</code></p>
+
+<p>After this, we can now start to define our services.  This is the section in which we list which images we are going to be using for the project.</p>
+
+<p><code>services:</code></p>
+
+<h5>Ruby app</h5>
+
+<p>First lets define our Ruby app service.  We are naming the service <code>web</code> as it is our Rails app. Then we tell Docker to build the image from our root directory and save it as an image called <code>app</code>.  Docker compose will then make use of our <code>Dockerfile</code> that we defined earlier in order to build our <code>web</code> service.</p>
+<pre class="highlight plaintext"><code>  web:
+    build: .
+    image: app
+</code></pre>
+<p>Once the image has been built, we want to reuse it later for our Sidekiq instance, otherwise Docker will try to rebuild it again, which is just a waste of resources.</p>
+
+<p>Next we are going to tell Docker what command to run once the image has been built and booted up.  In this instance, we want to install our gems and then boot up puma.</p>
+
+<p><code>command: bash -c &quot;bundle install &amp;&amp; bundle exec puma -p 3000 -C config/puma.rb&quot;</code></p>
+
+<p><strong>Tip:</strong> By using <code>bash -c</code> as the command, we can then pass more than one linux command to our service.</p>
+
+<p>Thirdly, we need to let Docker know to mount the root directory of our app to the <code>/app</code> folder that we defined in the <code>Dockerfile</code> previously.  We are also going to require the <code>box</code> volume that we talked about earlier in order to store our installed Gems into.  Then we need to map our Puma port <code>3000</code> to the outside world, in this case we will leave it as <code>3000</code> to keep things simple.</p>
+<pre class="highlight plaintext"><code>  volumes:
+      - .:/app
+    volumes_from:
+      - box
+    ports:
+      - '3000:3000'
+</code></pre>
+<p>Now we need to define the environment variables needed for our app, in this instance Postgres and Redis.  </p>
+<pre class="highlight plaintext"><code>   environment: &amp;default_environment
+      DATABASE_URL: 'postgres://postgres:@postgres:5432'
+      REDIS_URL: 'redis://redis:6379'
+</code></pre>
+<p>Docker provides us with some pretty cool features, like giving us unique schemas such as <code>postgres://</code> and <code>redis://</code> and then translates them to the proper URI needed for the service.</p>
+
+<p>Finally, we let Docker know that we rely on a couple more services to boot up before we can boot our image, otherwise it will complain that such services do not exist.</p>
+<pre class="highlight plaintext"><code>    depends_on:
+      - postgres
+      - redis
+</code></pre>
+<p>Up to this point our <code>docker-compose.yml</code> should look like the following:</p>
+<pre class="highlight plaintext"><code>version: '2.1'
+
+services:
+  web:
+    build: .
+    image: app
+    command: bash -c "bundle install &amp;&amp; bundle exec puma -p 3000 -C config/puma.rb"
+    volumes:
+      - .:/app
+    volumes_from:
+      - box
+    ports:
+      - '3000:3000'
+    environment: &amp;default_environment
+      DATABASE_URL: 'postgres://postgres:@postgres:5432'
+      REDIS_URL: 'redis://redis:6379'
+    depends_on:
+      - postgres
+      - redis
+</code></pre>
+<h5>Sidekiq instance</h5>
+
+<p>As Sidekiq essentially requires the same environment as our web app, we will use the same settings as our we service, but with a few tweaks.</p>
+<pre class="highlight plaintext"><code>  expence_sidekiq:
+    image: app
+    command: bundle exec sidekiq -c 5 -q critical -q default
+    volumes:
+      - .:/app
+    volumes_from:
+      - box
+    environment:
+      &lt;&lt;: *default_environment
+    depends_on:
+      - postgres
+      - redis
+      - web
+</code></pre>
+<p>The only differences here is that we use the <code>app</code> image that we built previously, run a different command, inherit the environment variables we just defined and then also wait until our <code>web</code> service has been booted until we boot up Sidekiq.</p>
+
+<h5>Postgres</h5>
+
+<p>For Postgres, we are again going to use an official image from Docker Hub and then explicitly state which version we would like to use.  Finally, we are going to expose the default port in which it runs on, only internally this time as we do not want it to be exposed to the outside world.</p>
+<pre class="highlight plaintext"><code>  postgres:
+    image: postgres:9.5
+    ports:
+      - '5432'
+</code></pre>
+<h5>Redis</h5>
+
+<p>Redis is much the same again, exposing it&rsquo;s default port internally.</p>
+<pre class="highlight plaintext"><code>  redis:
+    image: redis:3.2
+    ports:
+      - '6379'
+</code></pre>
+<h5>BusyBox for Gem storage</h5>
+
+<p>For storing our Gem files, we are going to use Busybox.  BusyBox is tiny image which contains stripped down versions of many UNIX utilities, we are only using it to store our gems and so want to keep things as light as possible.</p>
+
+<p>We also define a volume for persistence outside of the image, this will make sure that our Gems stay persisted.</p>
+<pre class="highlight plaintext"><code>  expence_box:
+    image: busybox
+    volumes:
+      - /box
+</code></pre>
+<p>You should now have the following complete <code>docker-compose.yml</code> file in your root directory:</p>
+<pre class="highlight plaintext"><code>version: '2.1'
+
+services:
+  web:
+    build: .
+    image: app
+    command: bash -c "bundle install &amp;&amp; bundle exec puma -p 3000 -C config/puma.rb"
+    volumes:
+      - .:/app
+    volumes_from:
+      - box
+    ports:
+      - '3000:3000'
+    environment: &amp;default_environment
+      DATABASE_URL: 'postgres://postgres:@postgres:5432'
+      REDIS_URL: 'redis://redis:6379'
+    depends_on:
+      - postgres
+      - redis
+
+  sidekiq:
+    image: app
+    command: bundle exec sidekiq -c 5 -q critical -q default
+    volumes:
+      - .:/app
+    volumes_from:
+      - box
+    environment:
+      &lt;&lt;: *default_environment
+    depends_on:
+      - postgres
+      - redis
+      - web
+
+  postgres:
+    image: postgres:9.5
+    ports:
+      - '5432'
+
+  redis:
+    image: redis:3.2
+    ports:
+      - '6379'
+
+  expence_box:
+    image: busybox
+    volumes:
+      - /box
+</code></pre>
+<h3>Scripts</h3>
+
+<p>In order to make our lives a little easier, we are going to set up some scripts, rather than type out numerous commands each time we want to do something.</p>
+
+<p>These will be Bash scripts and we can save them in our app directly under the folder <code>./bin/docker/</code> for clarity.</p>
+
+<h4>Boot</h4>
+
+<p><code>./bin/docker/boot</code></p>
+
+<p>First of all, let&rsquo;s set up a boot script so that we can start our app quickly and easily.</p>
+<pre class="highlight shell"><code><span class="c">#!/bin/bash</span>
+<span class="c"># spin up our image</span>
+docker-compose up --build
+</code></pre>
+<p>This tells <code>docker-compose</code> to boot up our images from our <code>docker-compose.yml</code> file.  However, we also need to pass the <code>--build</code> flag as our <code>app</code> image needs to be built first before we can spin it up.</p>
+
+<p>Once the image is built and bundler has installed our Gems and booted up, Docker will then spin up Sidekiq, Redis and Postgres.</p>
+
+<p>At this point, your app will now be available at <code>http://localhost:3000</code>.</p>
+
+<p>However, as we are using Postgres as our DB, Rails is going to complain that the database does not exist.  So let&rsquo;s prep some more scripts to allow us to do so in a convenient fashion.</p>
+
+<h4>Docker</h4>
+
+<p><code>./bin/docker/docker</code></p>
+
+<p>The rest of our scripts are going to rely on this <code>docker</code> script as an entry point into our <code>web</code> image so that we can run the commands necessary inside it.</p>
+<pre class="highlight shell"><code><span class="c">#!/bin/bash</span>
+docker-compose run web <span class="nv">$@</span>
+</code></pre>
+<p><code>$@</code> in this instance will pick up any arguments we pass to <code>./bin/docker/docker</code> and pass them through to <code>docker-compose</code> and to the <code>web</code> service.</p>
+
+<h4>Bundle</h4>
+
+<p><code>./bin/docker/bundle</code></p>
+
+<p>Now that we have our <code>docker</code> script in place, we can reuse that whenever we need to run any additional commands.</p>
+<pre class="highlight shell"><code><span class="c">#!/bin/bash</span>
+./bin/docker/docker bundle <span class="nv">$@</span>
+</code></pre>
+<h4>Rake</h4>
+
+<p><code>./bin/docker/rake</code></p>
+
+<p>Similarly, our <code>bundle</code> script can be reused for running any other commands through Bundler.</p>
+<pre class="highlight shell"><code><span class="c">#!/bin/bash</span>
+./bin/docker/bundle <span class="nb">exec </span>rake <span class="nv">$@</span>
+</code></pre>
+<p>Now that we have <code>rake</code> in place, we can use this to create and migrate our database.</p>
+
+<p><code>./bin/docker/rake db:create</code></p>
+
+<p>You will probably find that Rails crashes after it has created the development database when trying to create the test db.  This can be safely ignored.  When you come to creating and migrating the test db, this can be done with the following:</p>
+
+<p><code>./bin/docker/rake db:create RAILS_ENV=test</code></p>
+
+<h4>Console</h4>
+
+<p><code>./bin/docker/console</code></p>
+<pre class="highlight shell"><code><span class="c">#!/bin/bash</span>
+./bin/docker/bundle <span class="nb">exec </span>rails console <span class="nv">$@</span>
+</code></pre>
+<h4>Test</h4>
+
+<p><code>./bin/docker/test</code></p>
+<pre class="highlight shell"><code><span class="c">#!/bin/bash</span>
+<span class="nv">RAILS_ENV</span><span class="o">=</span><span class="nb">test</span> ./bin/docker/bundle <span class="nb">exec </span>rspec <span class="nv">$@</span>
+</code></pre>
+<p>You could use the same <code>bundle</code> pattern for writing any other scripts that you might need to use within your Docker instance, such as Rails itself for quickly generating migrations, etc.</p>
+
+<h3>Docker Series</h3>
+
+<p>I hope you have enjoyed this simple article on the basics of using Docker for development.  If you find any errors / alternative approaches, then please let me know in the comments below.</p>
+
+<p>This is just part one of my Docker series, I will be following this article up with how to use Docker in production and also how this process can be automated for quick deployments.</p>
+
+<ul>
+<li>Using Docker for Development</li>
+<li>Using Docker for Production</li>
+<li>Docker Automation</li>
+</ul>
+
+<h3>Rails 5 Caveats</h3>
+
+<p>If you are using Rails 5 then you might find that your code is not being reloaded after you save a file. This is due to how live reloading has changed and doesn&rsquo;t seem to work in Docker currently.</p>
+
+<p>However, this can be changed to work in the way Rails 4 hot reloads by changing the <code>file-watcher</code> Class within your <code>development.rb</code> with the following:</p>
+
+<p><code>config.file_watcher = ActiveSupport::FileUpdateChecker</code></p>
+
+<h3>References</h3>
+
+<p>Below are some references which I have used in the past to build up my understanding of Docker and are great resources in themselves.</p>
+
+<ul>
+<li><a href="https://medium.com/@fbzga/how-to-cache-bundle-install-with-docker-7bed453a5800#.pla68urub">How to Cache Bundle Install with Docker</a></li>
+<li><a href="https://github.com/rails/rails/issues/25186">Code is not reloaded in dev with Docker</a></li>
+</ul>
+
+            </article>
+            <div id="disqus_thread" class="comments"></div>
+            <script type="text/javascript">
+                /* * * CONFIGURATION VARIABLES * * */
+                var disqus_shortname = 'krisquigleycouk';
+                
+                /* * * DON'T EDIT BELOW THIS LINE * * */
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          </div>
+        </div>
+      </main>
+      <hr/>
+<footer class="site__footer">
+  &copy; 2017 Kris Quigley
+</footer>
+    </div>
+  </body>
+</html>
