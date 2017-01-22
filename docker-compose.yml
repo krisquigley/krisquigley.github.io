@@ -3,7 +3,7 @@ version: '2.1'
 services:
   krisquigley_web:
     build: .
-    command: bash -c "bundle install && bundle exec middleman server"
+    command: bash -c "bundle install && bundle exec middleman build --clean"
     volumes:
       - .:/app
     volumes_from:
