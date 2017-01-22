@@ -1,0 +1,10 @@
+=respond-to($media)
+  @if $media == "medium-up"
+    @media (min-width: $break-medium)
+      @content
+  @else if $media == "large-up"
+    @media (min-width: $break-large)
+      @content
+  @else if $media == "desktop-up"
+    @media (min-width: $break-desktop)
+      @content

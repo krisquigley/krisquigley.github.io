@@ -7,26 +7,19 @@
     <%= partial 'header' %>
     <div class="container">
       <main>
-        <div class="row">
-          <div class="col-xs-12 site">
-            <h1 class="site__heading"><%= current_article.title %></h1>
-            <h4><i><%= current_article.data.subtitle %></i></h4>
-            <small class="blog__article__header__date">Posted on <%= current_article.date.strftime('%b %-d, %Y') %> <span class="glyphicon glyphicon-time" aria-hidden="true"></span></small>
-            <hr class="site__rule">
-          </div>
-        </div>
+        <%= partial 'site_title' %>
         <div class="row">
           <div class="col-xs-12 col-sm-8 col-sm-push-2 blog__article">
             <article>
               <header class="blog__article__header">
-                <small class="blog__article__header__date"><%= current_article.date.strftime('%b %e, %Y') %></small>
                 <h2 class="blog__article__header__heading"><%= current_article.title %></h2>
-                <span class="blog__article__subheading"><%= current_article.data.subtitle %></span>
+                <span class="blog__article__subheading"><%= current_article.data.subtitle %></span><br/>
+                <small class="blog__article__header__date"><%= current_article.date.strftime('%b %e, %Y') %></small>
                 <p class="blog__article__intro"><%= current_article.data.intro %></p>
               </header>
               <%= yield %>
             </article>
-            <div id="disqus_thread"></div>
+            <div id="disqus_thread" class="comments"></div>
             <script type="text/javascript">
                 /* * * CONFIGURATION VARIABLES * * */
                 var disqus_shortname = 'krisquigleycouk';

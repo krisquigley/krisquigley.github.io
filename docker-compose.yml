@@ -1,0 +1,18 @@
+version: '2.1'
+
+services:
+  krisquigley_web:
+    build: .
+    command: bash -c "bundle install && bundle exec middleman server"
+    volumes:
+      - .:/app
+    volumes_from:
+      - krisquigley_box
+    ports:
+      - '4567:4567'
+      - '8080:8080'
+
+  krisquigley_box:
+    image: busybox
+    volumes:
+      - /box

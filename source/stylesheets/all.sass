@@ -1,3 +1,6 @@
+@import "sizing"
+@import "helpers/respond_to"
+
 p
   font-size: 1.6rem
 
@@ -14,7 +17,11 @@ h3
   margin-bottom: 1.5rem
 
 h4
+  margin-top: 4rem
   font-size: 2.2rem
+
+h5 
+  margin-top: 3rem
 
 p > img
   width: 100%
@@ -55,8 +62,6 @@ p > img
       &__heading
         margin-top: 0
     p
-      text-align: justify  
-          
       &:first-child:first-letter
         float: left
         color: #2196f3
@@ -68,11 +73,9 @@ p > img
 
 .site
   &__heading
-    margin-top: 5.5rem 
     text-align: center
     text-transform: capitalize
     font-family: 'great_vibesregular'
-    font-size: 7rem
 
   &__aside
     margin-bottom: 5rem
@@ -80,16 +83,28 @@ p > img
 
     &__image
       width: 80%
-      margin-left: 5%
+      margin-left: 9%
       border-radius: 50%
       margin-bottom: 2rem
       padding: 2px
       border: 1px solid #ddd
 
-
-  &__rule
-    margin: 6rem 0 8rem 0 
-
   &__footer
     margin: 3.5rem 0
     text-align: center
+
+  +respond-to('medium-up')
+    &__heading
+      margin-top: 5.5rem 
+      font-size: 7rem
+    
+    &__rule
+      margin: 6rem 0 8rem 0 
+    
+    &__aside
+      &__image
+        margin-left: 5%
+
+
+.comments
+  margin-top: 6rem
