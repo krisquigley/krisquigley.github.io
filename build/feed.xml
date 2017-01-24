@@ -1,0 +1,637 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+
+<!-- Always force latest IE rendering engine or request Chrome Frame -->
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+
+<!-- Use title if it's in the page YAML frontmatter -->
+<title>Bits &amp; Bytes - Kris Quigley - Ruby on Rails Developer</title>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+<link href="/stylesheets/paper.min-fa4b3427.css" rel="stylesheet" /><link href="/stylesheets/highlight-15c4871c.css" rel="stylesheet" /><link href="/stylesheets/all-13a717df.css" rel="stylesheet" />
+<script src="/javascripts/all-da39a3ee.js"></script>
+<link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" />
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+  </head>
+  <body>
+      <header>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/">Kris Quigley</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+    <div class="container">
+      <main>
+        <div class="row">
+  <div class="col-xs-12 site">
+    <h1 class="site__heading">Bits &amp; Bytes</h1>
+    <hr class="site__rule">
+  </div>
+</div>
+        <div class="row">
+          <?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Blog Name</title>
+  <subtitle>Blog subtitle</subtitle>
+  <id>http://blog.url.com/</id>
+  <link href="http://blog.url.com/"/>
+  <link href="http://blog.url.com/feed.xml" rel="self"/>
+  <updated>2017-01-22T00:00:00+00:00</updated>
+  <author>
+    <name>Blog Author</name>
+  </author>
+  <entry>
+    <title>Using Docker For Development</title>
+    <link rel="alternate" href="http://blog.url.com/2017/01/22/using-docker-for-development-rails.html"/>
+    <id>http://blog.url.com/2017/01/22/using-docker-for-development-rails.html</id>
+    <published>2017-01-22T00:00:00+00:00</published>
+    <updated>2017-01-24T11:42:39+00:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;h3&gt;Why use Docker?&lt;/h3&gt;
+
+&lt;p&gt;If you aren&amp;rsquo;t entirely sure what Docker is exactly, or what benefit it can bring to your work flow.  Then I recommend that you read the article &lt;a href="https://www.airpair.com/docker/posts/8-proven-real-world-ways-to-use-docker"&gt;8 Proven Real-World Ways to Use Docker&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;A lot of what I have learnt throughout my experience with Docker has been through the help of the online community, therefore it is only right that I also share the source of those articles and forums which can be found in the references section below.&lt;/p&gt;
+
+&lt;h3&gt;Docker Environment&lt;/h3&gt;
+
+&lt;p&gt;First off, we need to install Docker before we can do anything.  In this article I will only be talking about the now recommended way of installing and running Docker, using Docker for X, &lt;em&gt;where X is the OS&lt;/em&gt; rather than the old approach of using Docker toolbox.&lt;/p&gt;
+
+&lt;p&gt;Please note, if you are running Windows 10 Home, then you will need to be using Docker toolbox rather than Docker for Windows. As Docker for Windows relies on Hyper-V for virtualisation which only Windows 10 Pro provides.  If you can afford it, I recommend upgrading to the Pro version of Windows in this instance, as it is well worth it.&lt;/p&gt;
+
+&lt;h4&gt;Docker for Windows / Mac / Linux&lt;/h4&gt;
+
+&lt;p&gt;With that out of the way, head on over to &lt;a href="https://www.docker.com/products/docker"&gt;Docker&lt;/a&gt; and download Docker for Windows / Mac / Linux.  In this instance, I shall be installing and running Docker for Windows, however, the contents of this document are the same regardless of which OS you are running (hence the beauty of Docker).&lt;/p&gt;
+
+&lt;h4&gt;Dockerfile&lt;/h4&gt;
+
+&lt;p&gt;Once you have Docker installed, you are ready to start integrating it into your project, or should I say, integrate your project into Docker&amp;hellip;&lt;/p&gt;
+
+&lt;p&gt;Docker uses what it calls images; images are effectively snapshots of data, be they complete OS&amp;rsquo;s in themselves, services or just files in their own right.  More often than not, images contain a guest OS with minimal libraries/packages installed (in order to keep the weight down) and a preconfigured service for you to use with other Docker images.&lt;/p&gt;
+
+&lt;p&gt;Most official images can be found on Docker&amp;rsquo;s own service called &lt;a href="https://hub.docker.com/explore/"&gt;Docker Hub&lt;/a&gt;, which is akin to GitHub for Git.&lt;/p&gt;
+
+&lt;p&gt;Now, we can either use these images straight out of the box, making no changes to them in order to provide a service for us to interact with, e.g. Redis, Postgres or MongoDB; or we can use it as a base image to build upon.&lt;/p&gt;
+
+&lt;p&gt;We are going to do both, but firstly we are going to take an image as our base image, configure it and build our project into it.  This is where the Dockerfile comes into play.  The Dockerfile is where we define which base image we would like to use, what extra packages we might want to install; copy our project files into and then build it into its own bespoke image to later distribute, if we so wish.&lt;/p&gt;
+
+&lt;h3&gt;Development Dockerfile&lt;/h3&gt;
+
+&lt;p&gt;As this is an article for a Dockerised Rails app, we will be using a Ruby base image to start with.  However, the standard Ruby image is rather bloated with many packages that aren&amp;rsquo;t needed for more projects.  Therefore, we will be using the slim variant and installing any extra packages that we need.&lt;/p&gt;
+
+&lt;p&gt;Create the file, &lt;code&gt;Dockerfile&lt;/code&gt; and save it to the root of your project.  The first line we are going to add will be the following:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;FROM ruby:2.4-slim&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;This not only reduces bloat in our own Docker image, but saves local disk space and bandwidth.&lt;/p&gt;
+
+&lt;p&gt;Next we will install any additional packages we need for our project.  As my rails app makes use of Postgres as it&amp;rsquo;s database, I will need to install the &lt;code&gt;libpq-dev&lt;/code&gt; package in order to compile the postgres extensions needed by the &lt;code&gt;pg&lt;/code&gt; gem.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;RUN apt-get update
+RUN apt-get install -y build-essential git libpq-dev
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;RUN&lt;/code&gt; command tells Docker that you want to run a command within the image.&lt;/p&gt;
+
+&lt;p&gt;After this, we will tell Docker which folder to mount our app in and copy the contents of our project across.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;ENV app /app
+RUN mkdir $app
+WORKDIR $app
+COPY . $app
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, we are going to set the &lt;code&gt;BUNDLE_PATH&lt;/code&gt; to a custom location so that Bundler will install them in an external location.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;ENV BUNDLE_PATH /box&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;We do this as Docker images are stateless, and we do not want to be reinstalling our Gems every time we make some changes to our image.  Why do we point this to &lt;code&gt;/box&lt;/code&gt; and how do this become an external location you might ask.  More will be revealed in the next section on Docker Compose.&lt;/p&gt;
+
+&lt;p&gt;Your final &lt;code&gt;Dockerfile&lt;/code&gt; should look like this:&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;FROM ruby:2.4-slim
+
+# Install basic packages
+RUN apt-get update
+RUN apt-get install -y build-essential nodejs git libpq-dev yarn
+
+ENV app /app
+RUN mkdir $app
+WORKDIR $app
+ADD . $app
+
+ENV BUNDLE_PATH /box
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Docker Compose&lt;/h3&gt;
+
+&lt;p&gt;Docker Compose is a service provided by Docker as part of the installation as a means of booting and managing multiple Docker images at the same time, all in one place.&lt;/p&gt;
+
+&lt;h4&gt;Development docker-compose file&lt;/h4&gt;
+
+&lt;p&gt;To configure Docker Compose we need to create a &lt;code&gt;docker-compose.yml&lt;/code&gt; file within the root of our project directory.  As can be determined from the extension, the file makes use of YAML.&lt;/p&gt;
+
+&lt;p&gt;For the purpose of this article, we will be making use of version 2.1 of the Docker Compose syntax.  This should be defined at the top of the file.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;version: &amp;#39;2.1&amp;#39;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;After this, we can now start to define our services.  This is the section in which we list which images we are going to be using for the project.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;services:&lt;/code&gt;&lt;/p&gt;
+
+&lt;h5&gt;Ruby app&lt;/h5&gt;
+
+&lt;p&gt;First lets define our Ruby app service.  We are naming the service &lt;code&gt;web&lt;/code&gt; as it is our Rails app. Then we tell Docker to build the image from our root directory and save it as an image called &lt;code&gt;app&lt;/code&gt;.  Docker compose will then make use of our &lt;code&gt;Dockerfile&lt;/code&gt; that we defined earlier in order to build our &lt;code&gt;web&lt;/code&gt; service.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;  web:
+    build: .
+    image: app
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Once the image has been built, we want to reuse it later for our Sidekiq instance, otherwise Docker will try to rebuild it again, which is just a waste of resources.&lt;/p&gt;
+
+&lt;p&gt;Next we are going to tell Docker what command to run once the image has been built and booted up.  In this instance, we want to install our gems and then boot up puma.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;command: bash -c &amp;quot;bundle install &amp;amp;&amp;amp; bundle exec puma -p 3000 -C config/puma.rb&amp;quot;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Tip:&lt;/strong&gt; By using &lt;code&gt;bash -c&lt;/code&gt; as the command, we can then pass more than one linux command to our service.&lt;/p&gt;
+
+&lt;p&gt;Thirdly, we need to let Docker know to mount the root directory of our app to the &lt;code&gt;/app&lt;/code&gt; folder that we defined in the &lt;code&gt;Dockerfile&lt;/code&gt; previously.  We are also going to require the &lt;code&gt;box&lt;/code&gt; volume that we talked about earlier in order to store our installed Gems into.  Then we need to map our Puma port &lt;code&gt;3000&lt;/code&gt; to the outside world, in this case we will leave it as &lt;code&gt;3000&lt;/code&gt; to keep things simple.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;  volumes:
+      - .:/app
+    volumes_from:
+      - box
+    ports:
+      - '3000:3000'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now we need to define the environment variables needed for our app, in this instance Postgres and Redis.  &lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;   environment: &amp;amp;default_environment
+      DATABASE_URL: 'postgres://postgres:@postgres:5432'
+      REDIS_URL: 'redis://redis:6379'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Docker provides us with some pretty cool features, like giving us unique schemas such as &lt;code&gt;postgres://&lt;/code&gt; and &lt;code&gt;redis://&lt;/code&gt; and then translates them to the proper URI needed for the service.&lt;/p&gt;
+
+&lt;p&gt;Finally, we let Docker know that we rely on a couple more services to boot up before we can boot our image, otherwise it will complain that such services do not exist.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;    depends_on:
+      - postgres
+      - redis
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Up to this point our &lt;code&gt;docker-compose.yml&lt;/code&gt; should look like the following:&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;version: '2.1'
+
+services:
+  web:
+    build: .
+    image: app
+    command: bash -c "bundle install &amp;amp;&amp;amp; bundle exec puma -p 3000 -C config/puma.rb"
+    volumes:
+      - .:/app
+    volumes_from:
+      - box
+    ports:
+      - '3000:3000'
+    environment: &amp;amp;default_environment
+      DATABASE_URL: 'postgres://postgres:@postgres:5432'
+      REDIS_URL: 'redis://redis:6379'
+    depends_on:
+      - postgres
+      - redis
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h5&gt;Sidekiq instance&lt;/h5&gt;
+
+&lt;p&gt;As Sidekiq essentially requires the same environment as our web app, we will use the same settings as our we service, but with a few tweaks.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;  expence_sidekiq:
+    image: app
+    command: bundle exec sidekiq -c 5 -q critical -q default
+    volumes:
+      - .:/app
+    volumes_from:
+      - box
+    environment:
+      &amp;lt;&amp;lt;: *default_environment
+    depends_on:
+      - postgres
+      - redis
+      - web
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The only differences here is that we use the &lt;code&gt;app&lt;/code&gt; image that we built previously, run a different command, inherit the environment variables we just defined and then also wait until our &lt;code&gt;web&lt;/code&gt; service has been booted until we boot up Sidekiq.&lt;/p&gt;
+
+&lt;h5&gt;Postgres&lt;/h5&gt;
+
+&lt;p&gt;For Postgres, we are again going to use an official image from Docker Hub and then explicitly state which version we would like to use.  Finally, we are going to expose the default port in which it runs on, only internally this time as we do not want it to be exposed to the outside world.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;  postgres:
+    image: postgres:9.5
+    ports:
+      - '5432'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h5&gt;Redis&lt;/h5&gt;
+
+&lt;p&gt;Redis is much the same again, exposing it&amp;rsquo;s default port internally.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;  redis:
+    image: redis:3.2
+    ports:
+      - '6379'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h5&gt;BusyBox for Gem storage&lt;/h5&gt;
+
+&lt;p&gt;For storing our Gem files, we are going to use Busybox.  BusyBox is tiny image which contains stripped down versions of many UNIX utilities, we are only using it to store our gems and so want to keep things as light as possible.&lt;/p&gt;
+
+&lt;p&gt;We also define a volume for persistence outside of the image, this will make sure that our Gems stay persisted.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;  expence_box:
+    image: busybox
+    volumes:
+      - /box
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;You should now have the following complete &lt;code&gt;docker-compose.yml&lt;/code&gt; file in your root directory:&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;version: '2.1'
+
+services:
+  web:
+    build: .
+    image: app
+    command: bash -c "bundle install &amp;amp;&amp;amp; bundle exec puma -p 3000 -C config/puma.rb"
+    volumes:
+      - .:/app
+    volumes_from:
+      - box
+    ports:
+      - '3000:3000'
+    environment: &amp;amp;default_environment
+      DATABASE_URL: 'postgres://postgres:@postgres:5432'
+      REDIS_URL: 'redis://redis:6379'
+    depends_on:
+      - postgres
+      - redis
+
+  sidekiq:
+    image: app
+    command: bundle exec sidekiq -c 5 -q critical -q default
+    volumes:
+      - .:/app
+    volumes_from:
+      - box
+    environment:
+      &amp;lt;&amp;lt;: *default_environment
+    depends_on:
+      - postgres
+      - redis
+      - web
+
+  postgres:
+    image: postgres:9.5
+    ports:
+      - '5432'
+
+  redis:
+    image: redis:3.2
+    ports:
+      - '6379'
+
+  expence_box:
+    image: busybox
+    volumes:
+      - /box
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Scripts&lt;/h3&gt;
+
+&lt;p&gt;In order to make our lives a little easier, we are going to set up some scripts, rather than type out numerous commands each time we want to do something.&lt;/p&gt;
+
+&lt;p&gt;These will be Bash scripts and we can save them in our app directly under the folder &lt;code&gt;./bin/docker/&lt;/code&gt; for clarity.&lt;/p&gt;
+
+&lt;h4&gt;Boot&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;./bin/docker/boot&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;First of all, let&amp;rsquo;s set up a boot script so that we can start our app quickly and easily.&lt;/p&gt;
+&lt;pre class="highlight shell"&gt;&lt;code&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+&lt;span class="c"&gt;# spin up our image&lt;/span&gt;
+docker-compose up --build
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This tells &lt;code&gt;docker-compose&lt;/code&gt; to boot up our images from our &lt;code&gt;docker-compose.yml&lt;/code&gt; file.  However, we also need to pass the &lt;code&gt;--build&lt;/code&gt; flag as our &lt;code&gt;app&lt;/code&gt; image needs to be built first before we can spin it up.&lt;/p&gt;
+
+&lt;p&gt;Once the image is built and bundler has installed our Gems and booted up, Docker will then spin up Sidekiq, Redis and Postgres.&lt;/p&gt;
+
+&lt;p&gt;At this point, your app will now be available at &lt;code&gt;http://localhost:3000&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;However, as we are using Postgres as our DB, Rails is going to complain that the database does not exist.  So let&amp;rsquo;s prep some more scripts to allow us to do so in a convenient fashion.&lt;/p&gt;
+
+&lt;h4&gt;Docker&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;./bin/docker/docker&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;The rest of our scripts are going to rely on this &lt;code&gt;docker&lt;/code&gt; script as an entry point into our &lt;code&gt;web&lt;/code&gt; image so that we can run the commands necessary inside it.&lt;/p&gt;
+&lt;pre class="highlight shell"&gt;&lt;code&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+docker-compose run web &lt;span class="nv"&gt;$@&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;$@&lt;/code&gt; in this instance will pick up any arguments we pass to &lt;code&gt;./bin/docker/docker&lt;/code&gt; and pass them through to &lt;code&gt;docker-compose&lt;/code&gt; and to the &lt;code&gt;web&lt;/code&gt; service.&lt;/p&gt;
+
+&lt;h4&gt;Bundle&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;./bin/docker/bundle&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Now that we have our &lt;code&gt;docker&lt;/code&gt; script in place, we can reuse that whenever we need to run any additional commands.&lt;/p&gt;
+&lt;pre class="highlight shell"&gt;&lt;code&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+./bin/docker/docker bundle &lt;span class="nv"&gt;$@&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;Rake&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;./bin/docker/rake&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Similarly, our &lt;code&gt;bundle&lt;/code&gt; script can be reused for running any other commands through Bundler.&lt;/p&gt;
+&lt;pre class="highlight shell"&gt;&lt;code&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+./bin/docker/bundle &lt;span class="nb"&gt;exec &lt;/span&gt;rake &lt;span class="nv"&gt;$@&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now that we have &lt;code&gt;rake&lt;/code&gt; in place, we can use this to create and migrate our database.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;./bin/docker/rake db:create&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;You will probably find that Rails crashes after it has created the development database when trying to create the test db.  This can be safely ignored.  When you come to creating and migrating the test db, this can be done with the following:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;./bin/docker/rake db:create RAILS_ENV=test&lt;/code&gt;&lt;/p&gt;
+
+&lt;h4&gt;Console&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;./bin/docker/console&lt;/code&gt;&lt;/p&gt;
+&lt;pre class="highlight shell"&gt;&lt;code&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+./bin/docker/bundle &lt;span class="nb"&gt;exec &lt;/span&gt;rails console &lt;span class="nv"&gt;$@&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;Test&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;./bin/docker/test&lt;/code&gt;&lt;/p&gt;
+&lt;pre class="highlight shell"&gt;&lt;code&gt;&lt;span class="c"&gt;#!/bin/bash&lt;/span&gt;
+&lt;span class="nv"&gt;RAILS_ENV&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nb"&gt;test&lt;/span&gt; ./bin/docker/bundle &lt;span class="nb"&gt;exec &lt;/span&gt;rspec &lt;span class="nv"&gt;$@&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;You could use the same &lt;code&gt;bundle&lt;/code&gt; pattern for writing any other scripts that you might need to use within your Docker instance, such as Rails itself for quickly generating migrations, etc.&lt;/p&gt;
+
+&lt;h3&gt;Docker Series&lt;/h3&gt;
+
+&lt;p&gt;I hope you have enjoyed this simple article on the basics of using Docker for development.  If you find any errors / alternative approaches, then please let me know in the comments below.&lt;/p&gt;
+
+&lt;p&gt;This is just part one of my Docker series, I will be following this article up with how to use Docker in production and also how this process can be automated for quick deployments.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Using Docker for Development&lt;/li&gt;
+&lt;li&gt;Using Docker for Production&lt;/li&gt;
+&lt;li&gt;Docker Automation&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3&gt;Rails 5 Caveats&lt;/h3&gt;
+
+&lt;p&gt;If you are using Rails 5 then you might find that your code is not being reloaded after you save a file. This is due to how live reloading has changed and doesn&amp;rsquo;t seem to work in Docker currently.&lt;/p&gt;
+
+&lt;p&gt;However, this can be changed to work in the way Rails 4 hot reloads by changing the &lt;code&gt;file-watcher&lt;/code&gt; Class within your &lt;code&gt;development.rb&lt;/code&gt; with the following:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;config.file_watcher = ActiveSupport::FileUpdateChecker&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3&gt;References&lt;/h3&gt;
+
+&lt;p&gt;Below are some references which I have used in the past to build up my understanding of Docker and are great resources in themselves.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://medium.com/@fbzga/how-to-cache-bundle-install-with-docker-7bed453a5800#.pla68urub"&gt;How to Cache Bundle Install with Docker&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/rails/rails/issues/25186"&gt;Code is not reloaded in dev with Docker&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Polling for File Generation</title>
+    <link rel="alternate" href="http://blog.url.com/2015/12/08/polling-for-file-generation.html"/>
+    <id>http://blog.url.com/2015/12/08/polling-for-file-generation.html</id>
+    <published>2015-12-08T00:00:00+00:00</published>
+    <updated>2017-01-24T11:42:39+00:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;h3&gt;Background of the Problem&lt;/h3&gt;
+
+&lt;p&gt;&lt;img alt="Image of Orders Table" src="/images/orders-cc4e859b.png" /&gt;
+&lt;em&gt;A list of orders&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;We are currently generating a CSV of orders for a vendor; which at the moment isn&amp;rsquo;t a big problem as we do not have many vendors, or many orders, so the CSV will generate relatively quickly.   &lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;OrdersController&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;ApplicationController&lt;/span&gt;
+  &lt;span class="c1"&gt;#...&lt;/span&gt;
+
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;download_csv&lt;/span&gt;
+    &lt;span class="n"&gt;orders&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;Order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;where&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;id: &lt;/span&gt;&lt;span class="n"&gt;order_ids&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;file&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;Tempfile&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;new&lt;/span&gt;
+
+    &lt;span class="no"&gt;CSV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;file&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"wb"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;csv&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+      &lt;span class="n"&gt;csv&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;"Name"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"Address"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"City"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"County"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"Postcode"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"Email"&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+      &lt;span class="n"&gt;orders&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;each&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+        &lt;span class="n"&gt;csv&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;address&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;city&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;county&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;postcode&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;email&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+      &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+
+    &lt;span class="n"&gt;send_file&lt;/span&gt; &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;file&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;path&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;However, we know that suppliers and orders are bound to increase, therefore we need to find a better solution for generating files which will scale without blocking our precious ruby processes.&lt;/p&gt;
+
+&lt;p&gt;Obviously, this is where workers come in to do all the heavy lifting. By putting this work in a background process, we can free up our ruby processes again.&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;OrdersController&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;ApplicationController&lt;/span&gt;
+  &lt;span class="c1"&gt;#...&lt;/span&gt;
+
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;download_csv&lt;/span&gt;
+    &lt;span class="no"&gt;GenerateCSVJob&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;perform_async&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="ss"&gt;:order_ids&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+
+    &lt;span class="c1"&gt;# Code to send file back to user&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;However, how can I tell the controller that the file has finished being generated so that it can be sent back to the user?&lt;/p&gt;
+
+&lt;h3&gt;The Implementation&lt;/h3&gt;
+
+&lt;p&gt;It&amp;rsquo;s at this point that we need to do some polling, and the purpose of writing this article. &lt;/p&gt;
+
+&lt;p&gt;Now that we have the controller calling the worker to generate the file we need a way of tracking the file generated.  As we are not using a model for this we don&amp;rsquo;t have any handy IDs to keep track, this is where I like to use timestamps instead.&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="nb"&gt;require&lt;/span&gt; &lt;span class="s1"&gt;'csv'&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;GenerateCSVJob&lt;/span&gt;
+  &lt;span class="kp"&gt;include&lt;/span&gt; &lt;span class="no"&gt;Sidekiq&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="no"&gt;Worker&lt;/span&gt;
+
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;perform&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order_ids&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;orders&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;Order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;where&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="ss"&gt;id: &lt;/span&gt;&lt;span class="n"&gt;order_ids&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;file&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;Tempfile&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;new&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;to_s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="no"&gt;CSV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;file&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"wb"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;csv&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+      &lt;span class="n"&gt;csv&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;"Name"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"Address"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"City"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"County"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"Postcode"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"Email"&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+      &lt;span class="n"&gt;orders&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;each&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+        &lt;span class="n"&gt;csv&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;address&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;city&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;county&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;postcode&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;order&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;email&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+      &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+
+    &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;rename&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;file&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;path&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"/tmp/&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;_order.csv"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now that we have a unique way of identifying the file we have just generated, we have a clear way of identifying the file, in order to pass it back to the user.&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;OrdersController&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;ApplicationController&lt;/span&gt;
+  &lt;span class="c1"&gt;#...&lt;/span&gt;
+
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;download_csv&lt;/span&gt;
+    &lt;span class="n"&gt;timestamp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;Time&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;zone&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;now&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;to_i&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;to_s&lt;/span&gt;
+
+    &lt;span class="no"&gt;GenerateCSVJob&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;perform_async&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="ss"&gt;:order_ids&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+
+    &lt;span class="n"&gt;send_file&lt;/span&gt; &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"/tmp/&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;_order.csv"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;However, it is much cleaner if we just send back the entire URL for them to poll instead.  At this point, that I want to clean up the &lt;code&gt;OrdersController&lt;/code&gt; and move the logic into it&amp;rsquo;s own controller instead.&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;CSVExportsController&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;ApplicationController&lt;/span&gt;
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;create&lt;/span&gt;
+    &lt;span class="n"&gt;timestamp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;Time&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;zone&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;now&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;to_i&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;to_s&lt;/span&gt;
+
+    &lt;span class="no"&gt;GenerateCSVJob&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;perform_async&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="ss"&gt;:order_ids&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+
+    &lt;span class="n"&gt;respond_to&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="nb"&gt;format&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+      &lt;span class="nb"&gt;format&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;json&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="ss"&gt;json: &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="ss"&gt;url: &lt;/span&gt;&lt;span class="n"&gt;csv_export_path&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;},&lt;/span&gt; 
+                           &lt;span class="ss"&gt;status: :ok&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="k"&gt;end&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now we need to add an action to check whether the file exists yet or not, and if it does, then send it back to the user.&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;CSVExportsController&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;ApplicationController&lt;/span&gt;
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;create&lt;/span&gt;
+    &lt;span class="c1"&gt;#...&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;show&lt;/span&gt;
+    &lt;span class="n"&gt;timestamp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="ss"&gt;:id&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;exist?&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"/tmp/&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;_order.csv"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; 
+      &lt;span class="n"&gt;send_file&lt;/span&gt; &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"/tmp/&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;_order.csv"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;
+      &lt;span class="n"&gt;head&lt;/span&gt; &lt;span class="ss"&gt;:not_found&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;However, I prefer to send a link back to the user which they can then use to download the file whenever they want.&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;CSVExportsController&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;ApplicationController&lt;/span&gt;
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;create&lt;/span&gt;
+    &lt;span class="c1"&gt;#...&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;show&lt;/span&gt;
+    &lt;span class="n"&gt;timestamp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="ss"&gt;:id&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;exist?&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"/tmp/&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;_order.csv"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; 
+      &lt;span class="n"&gt;respond_to&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="nb"&gt;format&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+        &lt;span class="nb"&gt;format&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;csv&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;send_file&lt;/span&gt; &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"/tmp/&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;_order.csv"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="nb"&gt;format&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;json&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+          &lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="ss"&gt;json: &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="ss"&gt;file: &lt;/span&gt;&lt;span class="n"&gt;csv_export_path&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ss"&gt;format: :csv&lt;/span&gt;&lt;span class="p"&gt;)}&lt;/span&gt;
+        &lt;span class="k"&gt;end&lt;/span&gt;
+      &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;
+      &lt;span class="n"&gt;head&lt;/span&gt; &lt;span class="ss"&gt;:not_found&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;But of course, none of this will work without the Ajax to marry it all up.&lt;/p&gt;
+&lt;pre class="highlight coffeescript"&gt;&lt;code&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;
+  &lt;span class="nx"&gt;$&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;
+    &lt;span class="c1"&gt;# Provide some context to the user so they know what is happening after we submit the form&lt;/span&gt;
+    &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;'button[data-behavior="generate_csv"]'&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="na"&gt;click&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; 
+      &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;'button[data-behavior="generate_csv"]'&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="na"&gt;hide&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+      &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;'div[data-behavior="generating_csv"]'&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="na"&gt;show&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;'form[data-attribute="generate_csv_form"]'&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="na"&gt;on&lt;/span&gt; &lt;span class="s"&gt;'ajax:success'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;e&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;xhr&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;
+      &lt;span class="c1"&gt;# Uncheck the checkboxes&lt;/span&gt;
+      &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;'input:checkbox'&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="na"&gt;removeAttr&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;'checked'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+      &lt;span class="c1"&gt;# This will be our URL to check if the file exists&lt;/span&gt;
+      &lt;span class="nx"&gt;url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;data&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="na"&gt;url&lt;/span&gt;
+
+      &lt;span class="c1"&gt;# Set up our polling object&lt;/span&gt;
+      &lt;span class="nx"&gt;poll&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;
+        &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ajax&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;
+          &lt;span class="na"&gt;type&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"GET"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+          &lt;span class="na"&gt;dataType&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="s"&gt;'json'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+          &lt;span class="na"&gt;url&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;  &lt;span class="nx"&gt;url&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+          &lt;span class="na"&gt;error&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;
+            &lt;span class="c1"&gt;# If the file does not exist yet, try again&lt;/span&gt;
+            &lt;span class="nx"&gt;setTimeout&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="nx"&gt;poll&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="mi"&gt;5000&lt;/span&gt;
+          &lt;span class="na"&gt;success&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;status&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;xhr&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;
+            &lt;span class="c1"&gt;# Now that the file exists, populate the download link with the download URL and then show it&lt;/span&gt;
+            &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;'div[data-behavior="generating_csv"]'&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="na"&gt;hide&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;'a[data-attribute="download_csv_link"]'&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="na"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"href"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;data&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="na"&gt;file&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;'div[data-behavior="download_csv"]'&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="na"&gt;show&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="p"&gt;})&lt;/span&gt;
+
+      &lt;span class="c1"&gt;# Start polling csv_export_path to see if the file exists yet&lt;/span&gt;
+      &lt;span class="nx"&gt;poll&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="nx"&gt;jQuery&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The great thing about sending a URL back rather than just the file, is that we can add other formats to the &lt;code&gt;respond_to&lt;/code&gt; block, if we ever need to generate other types of files. For example a PDF of order labels for the supplier to print and stick on their orders.&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;FileExportsController&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;ApplicationController&lt;/span&gt;
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;create&lt;/span&gt;
+    &lt;span class="c1"&gt;#...&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;show&lt;/span&gt;
+    &lt;span class="n"&gt;timestamp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="ss"&gt;:id&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+    &lt;span class="n"&gt;file_type&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;params&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="ss"&gt;:file_type&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="c1"&gt;# CSV, PDF, etc&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;exist?&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"/tmp/&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;_order.&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;file_type&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; 
+      &lt;span class="n"&gt;respond_to&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="nb"&gt;format&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+        &lt;span class="nb"&gt;format&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;send&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;file_type&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;send_file&lt;/span&gt; &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"/tmp/&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;_order.&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;file_type&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="nb"&gt;format&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;json&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+          &lt;span class="n"&gt;render&lt;/span&gt; &lt;span class="ss"&gt;json: &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="ss"&gt;file: &lt;/span&gt;&lt;span class="n"&gt;file_export_path&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;timestamp&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="ss"&gt;format: &lt;/span&gt;&lt;span class="n"&gt;file_type&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                                                           &lt;span class="ss"&gt;file_type: &lt;/span&gt;&lt;span class="n"&gt;file_type&lt;/span&gt;&lt;span class="p"&gt;)}&lt;/span&gt;
+        &lt;span class="k"&gt;end&lt;/span&gt;
+      &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;
+      &lt;span class="n"&gt;head&lt;/span&gt; &lt;span class="ss"&gt;:not_found&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If you know of an alternative appraoch to achieving the same result, then please let me know in the comments below.&lt;/p&gt;
+
+&lt;h3&gt;Resources&lt;/h3&gt;
+
+&lt;p&gt;An example project with all the relavent code can be found under my &lt;a href="https://github.com/krisquigley/poll-worker-for-changes"&gt;github&lt;/a&gt; account.&lt;/p&gt;
+</content>
+  </entry>
+</feed>
+
+          <div class="col-xs-12 col-sm-3 col-sm-push-1 site__aside">
+  <aside>
+    <img class="site__aside__image" src="/images/profile-5a641126.jpg" />
+    <p>I'm Kris, a Ruby on Rails dev and father based in Leeds.</p>
+    <p>I am currently the lead developer at <a href="http://direct.matalan.co.uk">Matalan Direct</a> and offer my services to Charities and Non-Profits through <a href="http://affinity-tech.com">affinity tech.</a></p>
+  </aside>
+</div>
+
+        </div>
+      </main>
+      <hr/>
+<footer class="site__footer">
+  &copy; 2017 Kris Quigley
+</footer>
+    </div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-90707602-1', 'auto');
+      ga('send', 'pageview');
+
+    </script>
+  </body>
+</html>
