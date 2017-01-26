@@ -42,8 +42,7 @@ This not only reduces bloat in our own Docker image, but saves local disk space 
 Next we will install any additional packages we need for our project.  As my rails app makes use of Postgres as it's database, I will need to install the `libpq-dev` package in order to compile the postgres extensions needed by the `pg` gem.
 
 ```
-RUN apt-get update
-RUN apt-get install -y build-essential git libpq-dev
+RUN apt-get update && apt-get install -y build-essential git libpq-dev
 ```
 
 The `RUN` command tells Docker that you want to run a command within the image.
@@ -69,8 +68,7 @@ Your final `Dockerfile` should look like this:
 FROM ruby:2.4-slim
 
 # Install basic packages
-RUN apt-get update
-RUN apt-get install -y build-essential nodejs git libpq-dev yarn
+RUN apt-get update && apt-get install -y build-essential git libpq-dev
 
 ENV app /app
 RUN mkdir $app
