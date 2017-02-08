@@ -102,9 +102,9 @@ COPY . $app
 </code></pre>
 <p>Finally, we are going to set the <code>BUNDLE_PATH</code> to a custom location so that Bundler will install them in an external location.</p>
 
-<p><code>ENV BUNDLE_PATH /box</code></p>
+<p><code>ENV BUNDLE_PATH /gems</code></p>
 
-<p>We do this as Docker images are stateless, and we do not want to be reinstalling our Gems every time we make some changes to our image.  Why do we point this to <code>/box</code> and how do this become an external location you might ask.  More will be revealed in the next section on Docker Compose.</p>
+<p>We do this as Docker images are stateless, and we do not want to be reinstalling our Gems every time we make some changes to our image.  Why do we point this to <code>/gems</code> and how does this become an external location you might ask.  More will be revealed in the next section on Docker Compose.</p>
 
 <p>Your final <code>Dockerfile</code> should look like this:</p>
 <pre class="highlight plaintext"><code>FROM ruby:2.4-slim
@@ -117,7 +117,7 @@ RUN mkdir $app
 WORKDIR $app
 ADD . $app
 
-ENV BUNDLE_PATH /box
+ENV BUNDLE_PATH /gems
 </code></pre>
 <h3>Docker Compose</h3>
 
@@ -150,11 +150,10 @@ ENV BUNDLE_PATH /box
 
 <p><strong>Tip:</strong> By using <code>bash -c</code> as the command, we can then pass more than one linux command to our service.</p>
 
-<p>Thirdly, we need to let Docker know to mount the root directory of our app to the <code>/app</code> folder that we defined in the <code>Dockerfile</code> previously.  We are also going to require the <code>box</code> volume that we talked about earlier in order to store our installed Gems into.  Then we need to map our Puma port <code>3000</code> to the outside world, in this case we will leave it as <code>3000</code> to keep things simple.</p>
+<p>Thirdly, we need to let Docker know to mount the root directory of our app to the <code>/app</code> folder that we defined in the <code>Dockerfile</code> previously.  We are also going to define the <code>gem_cache</code> volume pointing to <code>/gems</code> that we talked about earlier in order to store our installed Gems into.  Then we need to map our Puma port <code>3000</code> to the outside world, in this case we will leave it as <code>3000</code> to keep things simple.</p>
 <pre class="highlight plaintext"><code>  volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     ports:
       - '3000:3000'
 </code></pre>
@@ -180,8 +179,7 @@ services:
     command: bash -c "bundle install &amp;&amp; bundle exec puma -p 3000 -C config/puma.rb"
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     ports:
       - '3000:3000'
     environment: &amp;default_environment
@@ -199,8 +197,7 @@ services:
     command: bundle exec sidekiq -c 5 -q critical -q default
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     environment:
       &lt;&lt;: *default_environment
     depends_on:
@@ -226,15 +223,13 @@ services:
     ports:
       - '6379'
 </code></pre>
-<h5>BusyBox for Gem storage</h5>
+<h5>Volumes</h5>
 
-<p>For storing our Gem files, we are going to use Busybox.  BusyBox is tiny image which contains stripped down versions of many UNIX utilities, we are only using it to store our gems and so want to keep things as light as possible.</p>
+<p>For storing our Gem files, we are going to use the volumes directive.  Volumes are defined at the root level of our <code>docker-compose</code> file.  Volumes, at the very least, allow us to define persistent storage locations so that we can access data again leter, even after our containers have been destoye. </p>
 
-<p>We also define a volume for persistence outside of the image, this will make sure that our Gems stay persisted.</p>
-<pre class="highlight plaintext"><code>  expence_box:
-    image: busybox
-    volumes:
-      - /box
+<p>Here we are only going to be using it for our gems.  You might also add more volumes to store postgres and redis data for example.  We will do exactly that in part 2 of the series for our production environment.</p>
+<pre class="highlight plaintext"><code>volumes:
+  gem_cache:
 </code></pre>
 <p>You should now have the following complete <code>docker-compose.yml</code> file in your root directory:</p>
 <pre class="highlight plaintext"><code>version: '2.1'
@@ -246,8 +241,7 @@ services:
     command: bash -c "bundle install &amp;&amp; bundle exec puma -p 3000 -C config/puma.rb"
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     ports:
       - '3000:3000'
     environment: &amp;default_environment
@@ -262,8 +256,7 @@ services:
     command: bundle exec sidekiq -c 5 -q critical -q default
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     environment:
       &lt;&lt;: *default_environment
     depends_on:
@@ -281,10 +274,8 @@ services:
     ports:
       - '6379'
 
-  expence_box:
-    image: busybox
-    volumes:
-      - /box
+volumes:
+  gem_cache:
 </code></pre>
 <h3>Scripts</h3>
 

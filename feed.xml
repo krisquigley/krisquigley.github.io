@@ -59,7 +59,7 @@
     <link rel="alternate" href="http://blog.url.com/2017/01/22/using-docker-for-development-rails.html"/>
     <id>http://blog.url.com/2017/01/22/using-docker-for-development-rails.html</id>
     <published>2017-01-22T00:00:00+00:00</published>
-    <updated>2017-01-22T18:05:57+00:00</updated>
+    <updated>2017-02-08T18:21:27+00:00</updated>
     <author>
       <name>Article Author</name>
     </author>
@@ -102,8 +102,7 @@
 &lt;p&gt;This not only reduces bloat in our own Docker image, but saves local disk space and bandwidth.&lt;/p&gt;
 
 &lt;p&gt;Next we will install any additional packages we need for our project.  As my rails app makes use of Postgres as it&amp;rsquo;s database, I will need to install the &lt;code&gt;libpq-dev&lt;/code&gt; package in order to compile the postgres extensions needed by the &lt;code&gt;pg&lt;/code&gt; gem.&lt;/p&gt;
-&lt;pre class="highlight plaintext"&gt;&lt;code&gt;RUN apt-get update
-RUN apt-get install -y build-essential git libpq-dev
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;RUN apt-get update &amp;amp;&amp;amp; apt-get install -y build-essential git libpq-dev
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;The &lt;code&gt;RUN&lt;/code&gt; command tells Docker that you want to run a command within the image.&lt;/p&gt;
 
@@ -115,23 +114,22 @@ COPY . $app
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Finally, we are going to set the &lt;code&gt;BUNDLE_PATH&lt;/code&gt; to a custom location so that Bundler will install them in an external location.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;ENV BUNDLE_PATH /box&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;ENV BUNDLE_PATH /gems&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;We do this as Docker images are stateless, and we do not want to be reinstalling our Gems every time we make some changes to our image.  Why do we point this to &lt;code&gt;/box&lt;/code&gt; and how do this become an external location you might ask.  More will be revealed in the next section on Docker Compose.&lt;/p&gt;
+&lt;p&gt;We do this as Docker images are stateless, and we do not want to be reinstalling our Gems every time we make some changes to our image.  Why do we point this to &lt;code&gt;/gems&lt;/code&gt; and how does this become an external location you might ask.  More will be revealed in the next section on Docker Compose.&lt;/p&gt;
 
 &lt;p&gt;Your final &lt;code&gt;Dockerfile&lt;/code&gt; should look like this:&lt;/p&gt;
 &lt;pre class="highlight plaintext"&gt;&lt;code&gt;FROM ruby:2.4-slim
 
 # Install basic packages
-RUN apt-get update
-RUN apt-get install -y build-essential nodejs git libpq-dev yarn
+RUN apt-get update &amp;amp;&amp;amp; apt-get install -y build-essential git libpq-dev
 
 ENV app /app
 RUN mkdir $app
 WORKDIR $app
 ADD . $app
 
-ENV BUNDLE_PATH /box
+ENV BUNDLE_PATH /gems
 &lt;/code&gt;&lt;/pre&gt;
 &lt;h3&gt;Docker Compose&lt;/h3&gt;
 
@@ -164,11 +162,10 @@ ENV BUNDLE_PATH /box
 
 &lt;p&gt;&lt;strong&gt;Tip:&lt;/strong&gt; By using &lt;code&gt;bash -c&lt;/code&gt; as the command, we can then pass more than one linux command to our service.&lt;/p&gt;
 
-&lt;p&gt;Thirdly, we need to let Docker know to mount the root directory of our app to the &lt;code&gt;/app&lt;/code&gt; folder that we defined in the &lt;code&gt;Dockerfile&lt;/code&gt; previously.  We are also going to require the &lt;code&gt;box&lt;/code&gt; volume that we talked about earlier in order to store our installed Gems into.  Then we need to map our Puma port &lt;code&gt;3000&lt;/code&gt; to the outside world, in this case we will leave it as &lt;code&gt;3000&lt;/code&gt; to keep things simple.&lt;/p&gt;
+&lt;p&gt;Thirdly, we need to let Docker know to mount the root directory of our app to the &lt;code&gt;/app&lt;/code&gt; folder that we defined in the &lt;code&gt;Dockerfile&lt;/code&gt; previously.  We are also going to define the &lt;code&gt;gem_cache&lt;/code&gt; volume pointing to &lt;code&gt;/gems&lt;/code&gt; that we talked about earlier in order to store our installed Gems into.  Then we need to map our Puma port &lt;code&gt;3000&lt;/code&gt; to the outside world, in this case we will leave it as &lt;code&gt;3000&lt;/code&gt; to keep things simple.&lt;/p&gt;
 &lt;pre class="highlight plaintext"&gt;&lt;code&gt;  volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     ports:
       - '3000:3000'
 &lt;/code&gt;&lt;/pre&gt;
@@ -194,8 +191,7 @@ services:
     command: bash -c "bundle install &amp;amp;&amp;amp; bundle exec puma -p 3000 -C config/puma.rb"
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     ports:
       - '3000:3000'
     environment: &amp;amp;default_environment
@@ -213,8 +209,7 @@ services:
     command: bundle exec sidekiq -c 5 -q critical -q default
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     environment:
       &amp;lt;&amp;lt;: *default_environment
     depends_on:
@@ -240,15 +235,13 @@ services:
     ports:
       - '6379'
 &lt;/code&gt;&lt;/pre&gt;
-&lt;h5&gt;BusyBox for Gem storage&lt;/h5&gt;
+&lt;h5&gt;Volumes&lt;/h5&gt;
 
-&lt;p&gt;For storing our Gem files, we are going to use Busybox.  BusyBox is tiny image which contains stripped down versions of many UNIX utilities, we are only using it to store our gems and so want to keep things as light as possible.&lt;/p&gt;
+&lt;p&gt;For storing our Gem files, we are going to use the volumes directive.  Volumes are defined at the root level of our &lt;code&gt;docker-compose&lt;/code&gt; file.  Volumes, at the very least, allow us to define persistent storage locations so that we can access data again leter, even after our containers have been destoye. &lt;/p&gt;
 
-&lt;p&gt;We also define a volume for persistence outside of the image, this will make sure that our Gems stay persisted.&lt;/p&gt;
-&lt;pre class="highlight plaintext"&gt;&lt;code&gt;  expence_box:
-    image: busybox
-    volumes:
-      - /box
+&lt;p&gt;Here we are only going to be using it for our gems.  You might also add more volumes to store postgres and redis data for example.  We will do exactly that in part 2 of the series for our production environment.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;volumes:
+  gem_cache:
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;You should now have the following complete &lt;code&gt;docker-compose.yml&lt;/code&gt; file in your root directory:&lt;/p&gt;
 &lt;pre class="highlight plaintext"&gt;&lt;code&gt;version: '2.1'
@@ -260,8 +253,7 @@ services:
     command: bash -c "bundle install &amp;amp;&amp;amp; bundle exec puma -p 3000 -C config/puma.rb"
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     ports:
       - '3000:3000'
     environment: &amp;amp;default_environment
@@ -276,8 +268,7 @@ services:
     command: bundle exec sidekiq -c 5 -q critical -q default
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     environment:
       &amp;lt;&amp;lt;: *default_environment
     depends_on:
@@ -295,10 +286,8 @@ services:
     ports:
       - '6379'
 
-  expence_box:
-    image: busybox
-    volumes:
-      - /box
+volumes:
+  gem_cache:
 &lt;/code&gt;&lt;/pre&gt;
 &lt;h3&gt;Scripts&lt;/h3&gt;
 
@@ -406,7 +395,7 @@ docker-compose run web &lt;span class="nv"&gt;$@&lt;/span&gt;
     <link rel="alternate" href="http://blog.url.com/2015/12/08/polling-for-file-generation.html"/>
     <id>http://blog.url.com/2015/12/08/polling-for-file-generation.html</id>
     <published>2015-12-08T00:00:00+00:00</published>
-    <updated>2017-01-22T18:05:57+00:00</updated>
+    <updated>2017-02-08T18:02:04+00:00</updated>
     <author>
       <name>Article Author</name>
     </author>
