@@ -1,0 +1,2 @@
+#!/bin/bash
+docker-compose krisquigley_web bundle exec middleman build --clean

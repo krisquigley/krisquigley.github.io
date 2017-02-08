@@ -3,16 +3,13 @@ version: '2.1'
 services:
   krisquigley_web:
     build: .
-    command: bash -c "bundle install && bundle exec middleman build --clean"
+    command: bash -c "bundle install && bundle exec middleman"
     volumes:
       - .:/app
-    volumes_from:
-      - krisquigley_box
+      - gem_cache:/box
     ports:
       - '4567:4567'
       - '8080:8080'
 
-  krisquigley_box:
-    image: busybox
-    volumes:
-      - /box
+volumes:
+  gem_cache:

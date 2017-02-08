@@ -58,9 +58,9 @@ COPY . $app
 
 Finally, we are going to set the `BUNDLE_PATH` to a custom location so that Bundler will install them in an external location.
 
-`ENV BUNDLE_PATH /box`
+`ENV BUNDLE_PATH /gems`
 
-We do this as Docker images are stateless, and we do not want to be reinstalling our Gems every time we make some changes to our image.  Why do we point this to `/box` and how do this become an external location you might ask.  More will be revealed in the next section on Docker Compose.
+We do this as Docker images are stateless, and we do not want to be reinstalling our Gems every time we make some changes to our image.  Why do we point this to `/gems` and how does this become an external location you might ask.  More will be revealed in the next section on Docker Compose.
 
 Your final `Dockerfile` should look like this:
 
@@ -75,7 +75,7 @@ RUN mkdir $app
 WORKDIR $app
 ADD . $app
 
-ENV BUNDLE_PATH /box
+ENV BUNDLE_PATH /gems
 ```
 
 ### Docker Compose
@@ -109,13 +109,12 @@ Next we are going to tell Docker what command to run once the image has been bui
 
 **Tip:** By using `bash -c` as the command, we can then pass more than one linux command to our service.
 
-Thirdly, we need to let Docker know to mount the root directory of our app to the `/app` folder that we defined in the `Dockerfile` previously.  We are also going to require the `box` volume that we talked about earlier in order to store our installed Gems into.  Then we need to map our Puma port `3000` to the outside world, in this case we will leave it as `3000` to keep things simple.
+Thirdly, we need to let Docker know to mount the root directory of our app to the `/app` folder that we defined in the `Dockerfile` previously.  We are also going to define the `gem_cache` volume pointing to `/gems` that we talked about earlier in order to store our installed Gems into.  Then we need to map our Puma port `3000` to the outside world, in this case we will leave it as `3000` to keep things simple.
 
 ```
   volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     ports:
       - '3000:3000'
 ```
@@ -150,8 +149,7 @@ services:
     command: bash -c "bundle install && bundle exec puma -p 3000 -C config/puma.rb"
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     ports:
       - '3000:3000'
     environment: &default_environment
@@ -170,8 +168,7 @@ As Sidekiq essentially requires the same environment as our web app, we will use
     command: bundle exec sidekiq -c 5 -q critical -q default
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     environment:
       <<: *default_environment
     depends_on:
@@ -202,16 +199,14 @@ Redis is much the same again, exposing it's default port internally.
       - '6379'
 ```
 
-##### BusyBox for Gem storage
-For storing our Gem files, we are going to use Busybox.  BusyBox is tiny image which contains stripped down versions of many UNIX utilities, we are only using it to store our gems and so want to keep things as light as possible.
+##### Volumes
+For storing our Gem files, we are going to use the volumes directive.  Volumes are defined at the root level of our `docker-compose` file.  Volumes, at the very least, allow us to define persistent storage locations so that we can access data again leter, even after our containers have been destoye. 
 
-We also define a volume for persistence outside of the image, this will make sure that our Gems stay persisted.
+Here we are only going to be using it for our gems.  You might also add more volumes to store postgres and redis data for example.  We will do exactly that in part 2 of the series for our production environment.
 
 ```
-  expence_box:
-    image: busybox
-    volumes:
-      - /box
+volumes:
+  gem_cache:
 ```
 
 You should now have the following complete `docker-compose.yml` file in your root directory:
@@ -226,8 +221,7 @@ services:
     command: bash -c "bundle install && bundle exec puma -p 3000 -C config/puma.rb"
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     ports:
       - '3000:3000'
     environment: &default_environment
@@ -242,8 +236,7 @@ services:
     command: bundle exec sidekiq -c 5 -q critical -q default
     volumes:
       - .:/app
-    volumes_from:
-      - box
+      - gem_cache:/gems
     environment:
       <<: *default_environment
     depends_on:
@@ -261,10 +254,8 @@ services:
     ports:
       - '6379'
 
-  expence_box:
-    image: busybox
-    volumes:
-      - /box
+volumes:
+  gem_cache:
 ```
 
 ### Scripts

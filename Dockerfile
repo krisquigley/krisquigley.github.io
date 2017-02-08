@@ -1,8 +1,7 @@
 FROM ruby:2.3-slim
 
 # Install basic packages
-RUN apt-get update
-RUN apt-get install -y build-essential wget nodejs git libpq-dev 
+RUN apt-get update && apt-get install -y build-essential wget nodejs git libpq-dev 
 
 ENV app /app
 RUN mkdir $app
