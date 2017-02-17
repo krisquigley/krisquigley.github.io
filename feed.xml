@@ -50,16 +50,572 @@
   <id>http://blog.url.com/</id>
   <link href="http://blog.url.com/"/>
   <link href="http://blog.url.com/feed.xml" rel="self"/>
-  <updated>2017-01-22T00:00:00+00:00</updated>
+  <updated>2017-02-17T00:00:00+00:00</updated>
   <author>
     <name>Blog Author</name>
   </author>
+  <entry>
+    <title>Replacing the asset pipeline with Webpack 2 in Rails</title>
+    <link rel="alternate" href="http://blog.url.com/2017/02/17/replacing-the-asset-pipeline-with-webpack-2-in-rails.html"/>
+    <id>http://blog.url.com/2017/02/17/replacing-the-asset-pipeline-with-webpack-2-in-rails.html</id>
+    <published>2017-02-17T00:00:00+00:00</published>
+    <updated>2017-02-17T21:34:45+00:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;Other than Rails devs, no one else uses sprockets as far as I&amp;rsquo;m aware, and so it is a very small ecosystem used by a small subset of devs.  Therefore, if we want to get these libraries working in Rails, then we either have to port them to sprockets and maintain them ourselves, or hope that someone else within the community will do it for us.&lt;/p&gt;
+
+&lt;p&gt;This is why, to me, it feels best if we can use a system which is more actively developed, supported and used by a larger group of users.  Thus, reducing the lead time for implementing the latest front-end libraries and technologies and having access to a greater pool of knowledge and skills.&lt;/p&gt;
+
+&lt;p&gt;With this in mind, our options end up being Gulp, Grunt or Webpack.&lt;/p&gt;
+
+&lt;h4&gt;Why Webpack?&lt;/h4&gt;
+
+&lt;p&gt;I have chosen Webpack for my future projects.  Why? Because it is currently becoming the biggest and most popular bundler for frontend assets.  Sorry I don&amp;rsquo;t have any hard metrics for you right now, this is based on my feeling from how the frontend community is responding to it.&lt;/p&gt;
+
+&lt;p&gt;I didn&amp;rsquo;t check comparison tables to see which was the best for my needs, rather, I prefer to go with the most popular approach within the community at any time, as there will be better support for the technology and will be more actively developed, this means using Webpack.&lt;/p&gt;
+
+&lt;p&gt;Additionally, this is what React use for the bootstrapping app &lt;a href="https://github.com/facebookincubator/create-react-app"&gt;create-react-app&lt;/a&gt; and let&amp;rsquo;s face it; React is awesome.&lt;/p&gt;
+
+&lt;h4&gt;Rails 5.1&lt;/h4&gt;
+
+&lt;p&gt;My decision was further supported by the news that Rails 5.1 will be shipping with both the asset pipeline and Webpack for managing assets.  Webpack (at the time of writing) will only be utilised for JS assets.&lt;/p&gt;
+
+&lt;p&gt;I, on the other hand, will be using Webpack for serving all assets in this article.&lt;/p&gt;
+
+&lt;h3&gt;Implementing Webpack&lt;/h3&gt;
+
+&lt;h4&gt;Preparing Rails&lt;/h4&gt;
+
+&lt;p&gt;To begin with, we will need to disable the asset pipeline in Rails.&lt;/p&gt;
+
+&lt;p&gt;If you are starting a new project from scratch using &lt;code&gt;rails new&lt;/code&gt; then you can pass the argument &lt;code&gt;--skip-sprockets&lt;/code&gt; to disable the asset pipeline from the get go.&lt;/p&gt;
+
+&lt;p&gt;Otherwise, If you are migrating an existing app to Webpack then you will need to disable sprockets manually.&lt;/p&gt;
+
+&lt;p&gt;In your &lt;code&gt;application.rb&lt;/code&gt; file you can disable it by commenting out the line &lt;code&gt;require &amp;quot;sprockets/railtie&amp;quot;&lt;/code&gt;.  However, you might have the line &lt;code&gt;require &amp;quot;rails/all&lt;/code&gt; instead, in that case you can replace that line with the following below:&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="nb"&gt;require&lt;/span&gt; &lt;span class="s2"&gt;"rails"&lt;/span&gt;
+&lt;span class="c1"&gt;# Pick the frameworks you want:&lt;/span&gt;
+&lt;span class="nb"&gt;require&lt;/span&gt; &lt;span class="s2"&gt;"active_model/railtie"&lt;/span&gt;
+&lt;span class="c1"&gt;# require "active_job/railtie"&lt;/span&gt;
+&lt;span class="nb"&gt;require&lt;/span&gt; &lt;span class="s2"&gt;"active_record/railtie"&lt;/span&gt;
+&lt;span class="nb"&gt;require&lt;/span&gt; &lt;span class="s2"&gt;"action_controller/railtie"&lt;/span&gt;
+&lt;span class="nb"&gt;require&lt;/span&gt; &lt;span class="s2"&gt;"action_mailer/railtie"&lt;/span&gt;
+&lt;span class="nb"&gt;require&lt;/span&gt; &lt;span class="s2"&gt;"action_view/railtie"&lt;/span&gt;
+&lt;span class="c1"&gt;# require "action_cable/engine"&lt;/span&gt;
+&lt;span class="c1"&gt;# require "sprockets/railtie"&lt;/span&gt;
+&lt;span class="c1"&gt;# require "rails/test_unit/railtie"&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Be sure not to comment out any of the frameworks above which you actually need!&lt;/p&gt;
+
+&lt;p&gt;Now you will need to go through each of your environment files (production.rb, etc) to comment out any references to &lt;code&gt;assets&lt;/code&gt; if there are any, additionally, comment out all lines in your &lt;code&gt;assets.rb&lt;/code&gt; file.&lt;/p&gt;
+
+&lt;p&gt;Furthermore, you can now also rip out any gems you needed for assets from your &lt;code&gt;Gemfile&lt;/code&gt;! (Be sure to write them down though so that you can replace them with the same NPM modules later.)&lt;/p&gt;
+
+&lt;h4&gt;Using Yarn&lt;/h4&gt;
+
+&lt;p&gt;Another hot tool within the JS community right now is Yarn.  Yarn is a replacement for NPM which offers faster installations and increased security. As of writing, Yarn is unable to do everything that NPM can currently do, but supports all the same packages.&lt;/p&gt;
+
+&lt;p&gt;If you are unsure whether or not Yarn does everything you need, then I recommend checking the &lt;a href="https://yarnpkg.com/en/docs/migrating-from-npm"&gt;migration docs&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;For the purpose of this article, I will be installing packages using Yarn, but you can easily follow along if you prefer to use NPM instead.&lt;/p&gt;
+
+&lt;h4&gt;Installing Webpack&lt;/h4&gt;
+
+&lt;p&gt;With that out of the way, we can now begin to install Webpack.  First traverse to your project folder and run &lt;code&gt;yarn global add webpack&lt;/code&gt;.  This will then add Webpack to our path so that we can run it anywhere. &lt;/p&gt;
+
+&lt;p&gt;At the time of this article, the latest version of Webpack is &lt;code&gt;2.2.1&lt;/code&gt; and so the configuration that follows will be relevant to that version of Webpack.  Many things have changed since v1.0 and may continue to change in the future.  So if you have come to this article from a time where v2.2.1 is considered very old, then your mileage may vary. &lt;/p&gt;
+
+&lt;p&gt;Before we start installing a gazillion node modules, I would recommend adding &lt;code&gt;/node_modules&lt;/code&gt; to your &lt;code&gt;.gitignore&lt;/code&gt; at this point.&lt;/p&gt;
+
+&lt;p&gt;Now might also be a good time to add our future compiled assets to &lt;code&gt;.gitignore&lt;/code&gt;, too.&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;/public/javascripts
+/public/stylesheets
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Using Webpack in development&lt;/h3&gt;
+
+&lt;p&gt;Webpack comes with a watch mode which will automatically recompile your assets if it detects a change in the filesystem by passing the flag &lt;code&gt;w&lt;/code&gt;.  Therefore, in development we will be running Webpack as such: &lt;code&gt;webpack -w&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;You could easily add this as another service in Foreman or in Docker, so that it is always running in the background when you boot up your app in development.&lt;/p&gt;
+
+&lt;h3&gt;Using Webpack to serve JS&lt;/h3&gt;
+
+&lt;p&gt;Now comes the fun part, we are going to start configuring Webpack to serve our JS assets.&lt;/p&gt;
+
+&lt;h4&gt;Replacing Coffeescript with ES6&lt;/h4&gt;
+
+&lt;p&gt;First we are going to begin with transpiling all of our &lt;code&gt;.coffee&lt;/code&gt; files into ES6.  For me, the biggest reason for us to be migrating from the asset pipeline to Webpack is so that we can drop coffeescript, which is pretty much obsolete now &lt;em&gt;trollface&lt;/em&gt;, and start using the latest syntax and functions from ES6 and onwards without headaches. &lt;/p&gt;
+
+&lt;p&gt;For this, I recommend using &lt;a href="http://decaffeinate-project.org/repl/"&gt;Decaffeinate&lt;/a&gt; as a quick way of getting some ok-ish ES6 code which we can refactor later. &lt;/p&gt;
+
+&lt;h4&gt;Adding babel&lt;/h4&gt;
+
+&lt;p&gt;Now that we have our ES6 code in place, we need to start configuring Webpack to transpile our ES6 into ES5 for full browser support.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s go ahead and add the packages we need for ES6 support.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;yarn add babel-core babel-loader babel-polyfill babel-preset-es2015&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;You might be wondering what the &lt;code&gt;babel-loader&lt;/code&gt; package is all about, this will enable Webpack to transpile ES6 using babel.  I will go into this further, shortly.&lt;/p&gt;
+
+&lt;p&gt;Yarn will then go ahead and create us a &lt;code&gt;package.json&lt;/code&gt; and &lt;code&gt;yarn.lock&lt;/code&gt; file.  These are comparable to &lt;code&gt;Gemfile&lt;/code&gt; and &lt;code&gt;Gemfile.lock&lt;/code&gt; respectively.&lt;/p&gt;
+
+&lt;p&gt;Now we need to create the file &lt;code&gt;webpack.config.js&lt;/code&gt; in the root of our project to configure Webpack to our needs.&lt;/p&gt;
+
+&lt;p&gt;First we are going to define some libraries that we will need throughout our config file:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;path&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'path'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then we are going to define where we want our compiled JS to be exported to:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;jsOutputTemplate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s1"&gt;'javascripts/application.js'&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Next comes all the juicy details which we will be defined within an object:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="nx"&gt;module&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;exports&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="c1"&gt;// ... Juicy details&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The first key will be our &lt;code&gt;context&lt;/code&gt;, in which we tell Webpack where we want it to look when we are defining our &lt;code&gt;entry&lt;/code&gt; points.  &lt;code&gt;entry&lt;/code&gt; points are where Webpack will begin to read the assets that we want it to transpile.  In this case, I will be following the same directory structure that the asset pipeline uses for JS and CSS.  This is purely to stick to Rails conventions and to make life easier for current Rails developers:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;  &lt;span class="nx"&gt;context&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;path&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;join&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;__dirname&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;'/app/assets'&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+  &lt;span class="nx"&gt;entry&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nl"&gt;application&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'./javascripts/application.js'&lt;/span&gt;
+  &lt;span class="p"&gt;},&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The next key is our output path, where we would like Webpack to save our assets to once they have been transpiled.  We will be referencing our previous &lt;code&gt;jsOutputTemplate&lt;/code&gt; constant here.&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;  &lt;span class="nx"&gt;output&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nl"&gt;path&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;path&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;join&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;__dirname&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;'/public'&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+    &lt;span class="nx"&gt;filename&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;jsOutputTemplate&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, in the &lt;code&gt;module&lt;/code&gt; key we are going to add another object with the key &lt;code&gt;loaders&lt;/code&gt; in order to define which loaders we want to use.&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt; &lt;span class="nx"&gt;module&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nl"&gt;loaders&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[{&lt;/span&gt;
+      &lt;span class="na"&gt;test&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/&lt;/span&gt;&lt;span class="se"&gt;\.&lt;/span&gt;&lt;span class="sr"&gt;js$/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="na"&gt;exclude&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/node_modules/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="na"&gt;loader&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'babel-loader'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="na"&gt;query&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="na"&gt;presets&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;'es2015'&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+      &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}]&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In this case, we are using the &lt;code&gt;babel-loader&lt;/code&gt; to transpile any JS files from es2015, i.e. ES6.&lt;/p&gt;
+
+&lt;p&gt;Your &lt;code&gt;webpack.config.js&lt;/code&gt; file should now look something like this:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="c1"&gt;// Import external libraries&lt;/span&gt;
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;path&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'path'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="c1"&gt;// Define our compiled asset files&lt;/span&gt;
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;jsOutputTemplate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s1"&gt;'javascripts/application.js'&lt;/span&gt;
+
+&lt;span class="nx"&gt;module&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;exports&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="c1"&gt;// Remove this if you are not using Docker&lt;/span&gt;
+  &lt;span class="na"&gt;watchOptions&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="na"&gt;aggregateTimeout&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;300&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="na"&gt;poll&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;1000&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="na"&gt;ignored&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/node_modules/&lt;/span&gt;
+  &lt;span class="p"&gt;},&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// Define our asset directory&lt;/span&gt;
+  &lt;span class="na"&gt;context&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;path&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;join&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;__dirname&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;'/app/assets'&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// What js / CSS files should we read from and generate&lt;/span&gt;
+  &lt;span class="na"&gt;entry&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="na"&gt;application&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'./javascripts/application.js'&lt;/span&gt;
+  &lt;span class="p"&gt;},&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// Define where to save assets to&lt;/span&gt;
+  &lt;span class="na"&gt;output&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="na"&gt;path&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;path&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;join&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;__dirname&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;'/public'&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+    &lt;span class="na"&gt;filename&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;jsOutputTemplate&lt;/span&gt;
+  &lt;span class="p"&gt;},&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// Define how different file types should be transpiled&lt;/span&gt;
+  &lt;span class="na"&gt;module&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="na"&gt;loaders&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[{&lt;/span&gt;
+      &lt;span class="na"&gt;test&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/&lt;/span&gt;&lt;span class="se"&gt;\.&lt;/span&gt;&lt;span class="sr"&gt;js$/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="na"&gt;exclude&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/node_modules/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="na"&gt;loader&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'babel-loader'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="na"&gt;query&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="na"&gt;presets&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;'es2015'&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+      &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}]&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To test that everything is working correctly, make sure you have Webpack fired up with &lt;code&gt;webpack -w&lt;/code&gt; and add the following HTML somewhere:&lt;/p&gt;
+&lt;pre class="highlight html"&gt;&lt;code&gt;&lt;span class="nt"&gt;&amp;lt;button&lt;/span&gt; &lt;span class="na"&gt;data-behavior=&lt;/span&gt;&lt;span class="s"&gt;"alert"&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;This is my button&lt;span class="nt"&gt;&amp;lt;/button&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then we are going to create a module to fire off an alert when the button has been clicked:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="kr"&gt;export&lt;/span&gt; &lt;span class="k"&gt;default&lt;/span&gt; &lt;span class="p"&gt;(()&lt;/span&gt; &lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="kd"&gt;let&lt;/span&gt; &lt;span class="nx"&gt;button&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;document&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;querySelector&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"button[data-behavior='alert']"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="nx"&gt;button&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;addEventListener&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'click'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;showAlert&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+  &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="nx"&gt;showAlert&lt;/span&gt; &lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nx"&gt;alert&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'hi'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;})()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Save this under &lt;code&gt;/app/assets/javascripts/modules/alert.js&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Then in our &lt;code&gt;application.js&lt;/code&gt; file we can add the line:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="kr"&gt;import&lt;/span&gt; &lt;span class="s1"&gt;'./modules/alert'&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Remember to remove anything else in your &lt;code&gt;application.js&lt;/code&gt; file, or else you might get compilation errors from Webpack.&lt;/p&gt;
+
+&lt;p&gt;Importing files like this, also allows us to stick to the same conventions as we had with the asset pipeline.&lt;/p&gt;
+
+&lt;p&gt;Now when you boot up Rails you should get an alert pop up once you click on the button!&lt;/p&gt;
+
+&lt;h4&gt;Using jQuery&lt;/h4&gt;
+
+&lt;p&gt;In order enable to jQuery support in Bootstrap, or if you are using some legacy jQuery plugins, then we need to define it as a global function within Webpack.&lt;/p&gt;
+
+&lt;p&gt;For this, we will need to use a plugin to assign the jQuery library to some global variables.  This will sit in a new key within our Webpack config module, aptly named &lt;code&gt;plugins&lt;/code&gt;.  &lt;code&gt;plugins&lt;/code&gt; is defined as an array and as this will be a custom plugin, we need to require the Webpack library.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s add this in now:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;path&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'path'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;webpack&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"webpack"&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now, after the &lt;code&gt;module&lt;/code&gt; key we are going to add &lt;code&gt;plugins&lt;/code&gt; with our custom jQuery plugin:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;  &lt;span class="nx"&gt;plugins&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;
+    &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="nx"&gt;webpack&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;ProvidePlugin&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;
+      &lt;span class="na"&gt;$&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'jquery'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="na"&gt;jQuery&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'jquery'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+      &lt;span class="s1"&gt;'window.jQuery'&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'jquery'&lt;/span&gt;
+    &lt;span class="p"&gt;})&lt;/span&gt;
+  &lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Lastly, let&amp;rsquo;s make sure we have jquery installed.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;yarn add jquery&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Your jQuery scripts should now work as expected.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Another important point&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Should you wish to continue using UJS, then we will need to install the module and import it into our assets.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;yarn add jquery-ujs&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;And then we can add the following line to our &lt;code&gt;application.js&lt;/code&gt; file:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="kr"&gt;import&lt;/span&gt; &lt;span class="s1"&gt;'jquery-ujs'&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;Adding React&lt;/h4&gt;
+
+&lt;p&gt;Now that we are running Webpack, it makes it very easy for us to start adding React components throughout the project, if this is something which you feel your project would benefit from of course.&lt;/p&gt;
+
+&lt;p&gt;Simply install React: &lt;code&gt;yarn add react react-dom babel-preset-react&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Then tell babel to transpile our React code by adding &lt;code&gt;react&lt;/code&gt; as another preset:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="nl"&gt;test&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/&lt;/span&gt;&lt;span class="se"&gt;\.&lt;/span&gt;&lt;span class="sr"&gt;js$/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+  &lt;span class="nx"&gt;exclude&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="nx"&gt;node_modules&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+  &lt;span class="nx"&gt;loader&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'babel-loader'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+  &lt;span class="nx"&gt;query&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nl"&gt;presets&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;'es2015'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;'react'&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Using Webpack to serve CSS&lt;/h3&gt;
+
+&lt;p&gt;By default, Webpack compiles everything into JS, which may or may not be a good thing.  For us traditional asset pipeline devs, we might be like WTF, where did all of my CSS files just go?!&lt;/p&gt;
+
+&lt;p&gt;In this case, and the assumption for the rest of the article, we will need to tell Webpack to extract them out into their own files using a plugin.&lt;/p&gt;
+
+&lt;p&gt;For this plugin, &lt;code&gt;extract-text-webpack-plugin&lt;/code&gt;, we will however need to define which version to use as the current 1.x stable branch does not support Webpack 2 (the release candidates also currently break &lt;code&gt;bootstrap-loader&lt;/code&gt;):&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;yarn add extract-text-webpack-plugin@v2.0.0-beta.5 css-loader sass-loader&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;With that installed, we can now add the plugin to our config file:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="p"&gt;...&lt;/span&gt;
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;ExtractTextPlugin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;"extract-text-webpack-plugin"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;...&lt;/span&gt;
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;cssOutputTemplate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s1"&gt;'stylesheets/application.css'&lt;/span&gt;
+
+&lt;span class="p"&gt;...&lt;/span&gt;
+
+  &lt;span class="nl"&gt;plugins&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;
+      &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="nx"&gt;ExtractTextPlugin&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt; &lt;span class="na"&gt;filename&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;cssOutputTemplate&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="na"&gt;allChunks&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt; &lt;span class="p"&gt;}),&lt;/span&gt; &lt;span class="c1"&gt;// Define where to save the CSS file&lt;/span&gt;
+    &lt;span class="p"&gt;...&lt;/span&gt;
+  &lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We also need to define our CSS file in our entry points. &lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;  &lt;span class="nx"&gt;entry&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nl"&gt;application&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;"./javascripts/application.js"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"./stylesheets/application.sass"&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+  &lt;span class="p"&gt;},&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In this example I will be using SASS, for which we will also need a loader in order to transpile our SASS into CSS.  If you are only using plain CSS however, then you will only need the &lt;code&gt;css-loader&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;yarn add css-loader sass-loader node-sass&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Now let&amp;rsquo;s add in our new loaders:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;   &lt;span class="nx"&gt;module&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+      &lt;span class="nl"&gt;loaders&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;
+        &lt;span class="p"&gt;...&lt;/span&gt;
+        &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="nl"&gt;test&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/&lt;/span&gt;&lt;span class="se"&gt;\.&lt;/span&gt;&lt;span class="sr"&gt;css$/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;loaders&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;ExtractTextPlugin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;extract&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'css-loader'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;},&lt;/span&gt;
+        &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="na"&gt;test&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/&lt;/span&gt;&lt;span class="se"&gt;\.&lt;/span&gt;&lt;span class="sr"&gt;sass$/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="na"&gt;loader&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nx"&gt;ExtractTextPlugin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;extract&lt;/span&gt;&lt;span class="p"&gt;([&lt;/span&gt;&lt;span class="s1"&gt;'css-loader'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;'sass-loader'&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+      &lt;span class="p"&gt;]&lt;/span&gt;
+   &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;Bootstrap&lt;/h4&gt;
+
+&lt;p&gt;Getting Bootstrap set up and working was quite a major undertaking, I have boiled down here, what took many hours of trial and error.  Hopefully this will save you a lot of time.&lt;/p&gt;
+
+&lt;p&gt;For this article, we will be using the &lt;code&gt;bootstrap-loader&lt;/code&gt; package, so let&amp;rsquo;s go ahead and install it, including it&amp;rsquo;s dependencies:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;yarn add bootstrap-loader bootstrap-sass css-loader node-sass resolve-url-loader sass-loader style-loader url-loader imports-loader file-loader&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Next we need to update our entry point to use &lt;code&gt;bootstrap-loader&lt;/code&gt;.&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;  &lt;span class="nx"&gt;entry&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nl"&gt;application&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;'bootstrap-loader'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;'./javascripts/application.js'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;'./stylesheets/application.sass'&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+  &lt;span class="p"&gt;},&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;Styles&lt;/h4&gt;
+
+&lt;p&gt;Now we need to create a &lt;code&gt;.bootstraprc&lt;/code&gt; file within the root directory of our project and populate it with the following:&lt;/p&gt;
+&lt;pre class="highlight yaml"&gt;&lt;code&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="c1"&gt;# Major version of Bootstrap: 3 or 4&lt;/span&gt;
+&lt;span class="na"&gt;bootstrapVersion&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;3&lt;/span&gt;
+
+&lt;span class="c1"&gt;# If Bootstrap version 3 is used - turn on/off custom icon font path&lt;/span&gt;
+&lt;span class="na"&gt;useCustomIconFontPath&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;false&lt;/span&gt;
+
+&lt;span class="c1"&gt;# Webpack loaders, order matters&lt;/span&gt;
+&lt;span class="na"&gt;styleLoaders&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;style-loader&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;css-loader&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;sass-loader&lt;/span&gt;
+
+&lt;span class="c1"&gt;# Extract styles to stand-alone css file&lt;/span&gt;
+&lt;span class="na"&gt;extractStyles&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+
+&lt;span class="c1"&gt;# Usually this endpoint-file contains list of @imports of your application styles.&lt;/span&gt;
+&lt;span class="na"&gt;appStyles&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;./app/assets/stylesheets/application.sass&lt;/span&gt;
+
+&lt;span class="c1"&gt;### Bootstrap styles&lt;/span&gt;
+&lt;span class="na"&gt;styles&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+
+  &lt;span class="c1"&gt;# Mixins&lt;/span&gt;
+  &lt;span class="na"&gt;mixins&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+
+  &lt;span class="c1"&gt;# Reset and dependencies&lt;/span&gt;
+  &lt;span class="na"&gt;normalize&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;print&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;glyphicons&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+
+  &lt;span class="c1"&gt;# Core CSS&lt;/span&gt;
+  &lt;span class="na"&gt;scaffolding&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;type&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;code&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;grid&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;tables&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;forms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;buttons&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+
+  &lt;span class="c1"&gt;# Components&lt;/span&gt;
+  &lt;span class="na"&gt;component-animations&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;dropdowns&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;button-groups&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;input-groups&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;navs&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;navbar&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;breadcrumbs&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;pagination&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;pager&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;labels&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;badges&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;jumbotron&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;thumbnails&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;alerts&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;progress-bars&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;media&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;list-group&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;panels&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;wells&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;responsive-embed&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;close&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+
+  &lt;span class="c1"&gt;# Components w/ JavaScript&lt;/span&gt;
+  &lt;span class="na"&gt;modals&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;tooltip&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;popovers&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;carousel&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+
+  &lt;span class="c1"&gt;# Utility classes&lt;/span&gt;
+  &lt;span class="na"&gt;utilities&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;responsive-utilities&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+
+&lt;span class="c1"&gt;### Bootstrap scripts&lt;/span&gt;
+&lt;span class="na"&gt;scripts&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="na"&gt;transition&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;alert&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;button&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;carousel&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;collapse&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;dropdown&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;modal&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;tooltip&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;popover&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;scrollspy&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;tab&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="na"&gt;affix&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;More options can be found on the &lt;a href="https://github.com/shakacode/bootstrap-loader"&gt;bootstrap-loader&lt;/a&gt; project page.&lt;/p&gt;
+
+&lt;h4&gt;Scripts&lt;/h4&gt;
+
+&lt;p&gt;To enable the various Bootstrap scripts such as modal windows, etc we need to add another loader:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="nl"&gt;test&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/bootstrap-sass&lt;/span&gt;&lt;span class="se"&gt;\/&lt;/span&gt;&lt;span class="sr"&gt;assets&lt;/span&gt;&lt;span class="se"&gt;\/&lt;/span&gt;&lt;span class="sr"&gt;javascripts&lt;/span&gt;&lt;span class="se"&gt;\/&lt;/span&gt;&lt;span class="sr"&gt;/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;loader&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'imports-loader?jQuery=jquery'&lt;/span&gt; &lt;span class="p"&gt;},&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;Fonts&lt;/h4&gt;
+
+&lt;p&gt;In order to render the Bootstrap font icons, we will need to add the following loaders:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="nl"&gt;test&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/&lt;/span&gt;&lt;span class="se"&gt;\.(&lt;/span&gt;&lt;span class="sr"&gt;woff2&lt;/span&gt;&lt;span class="se"&gt;?&lt;/span&gt;&lt;span class="sr"&gt;|svg&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="sr"&gt;$/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;loader&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'url-loader?limit=10000&amp;amp;name=/fonts/[name].[ext]'&lt;/span&gt; &lt;span class="p"&gt;},&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="na"&gt;test&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/&lt;/span&gt;&lt;span class="se"&gt;\.(&lt;/span&gt;&lt;span class="sr"&gt;ttf|eot&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="sr"&gt;$/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="na"&gt;loader&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'file-loader?name=/fonts/[name].[ext]'&lt;/span&gt; &lt;span class="p"&gt;},&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;At this point you should be all good to start using Bootstrap as usual.&lt;/p&gt;
+
+&lt;h3&gt;Using Webpack to serve Images&lt;/h3&gt;
+
+&lt;p&gt;For images, we are going to keep things simple and not use the traditional Rails &lt;code&gt;/app/assets/images/&lt;/code&gt; folder and just go right ahead and place our images directly into &lt;code&gt;/public/images&lt;/code&gt; as that is where Rails expects to find them.&lt;/p&gt;
+
+&lt;p&gt;If you would like to stick to the old convention here, then we can simply update our Webpack config to copy the files across to the &lt;code&gt;public&lt;/code&gt; folder.  Going down this route, also allows us to do some post-processing on the images as we copy them across. For this, I would recommend using &lt;a href="https://github.com/tcoopman/image-webpack-loader"&gt;image-webpack-loader&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3&gt;Using Webpack on Codeship&lt;/h3&gt;
+
+&lt;p&gt;As we have ignored our compiled assets from being added to our git repo, we will need to configure Codeship to compile our assets before running the test suite.&lt;/p&gt;
+
+&lt;p&gt;Under &amp;lsquo;Test&amp;rsquo; in &amp;lsquo;Project Settings&amp;rsquo; we can add the following lines at the end of our &amp;lsquo;Setup Commands&amp;rsquo;:&lt;/p&gt;
+&lt;pre class="highlight plaintext"&gt;&lt;code&gt;nvm use 6.9.5
+npm install
+./node_modules/.bin/webpack --progress --colors
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This will then compile our assets before running the test suite.&lt;/p&gt;
+
+&lt;h3&gt;Using Webpack in Production&lt;/h3&gt;
+
+&lt;p&gt;For production we want to be able to uglify our assets in order to reduce file size, we can do that with Webpack by passing the flag &lt;code&gt;p&lt;/code&gt;.  We will also want to fingerprint them for Rails and gzip them.&lt;/p&gt;
+
+&lt;p&gt;We can do this by first tracking if the flag &lt;code&gt;p&lt;/code&gt; has been passed to Webpack to enable the aforementioned behaviour:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="c1"&gt;// Capture production argument&lt;/span&gt;
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;prod&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;process&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;indexOf&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'-p'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;!==&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;Fingerprinting assets for production&lt;/h4&gt;
+
+&lt;p&gt;As Rails fingerprints assets to ensure that the browser re-downloads assets once they have been changed, we will also need to implement this into Webpack so that Rails can function as usual.&lt;/p&gt;
+
+&lt;p&gt;Now that we are checking for production mode, we can use this to determine the filename of our assets:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="c1"&gt;// Define our compiled asset files&lt;/span&gt;
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;jsOutputTemplate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;prod&lt;/span&gt; &lt;span class="p"&gt;?&lt;/span&gt; &lt;span class="s1"&gt;'javascripts/[name]-[hash].js'&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'javascripts/[name].js'&lt;/span&gt;
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;cssOutputTemplate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;prod&lt;/span&gt; &lt;span class="p"&gt;?&lt;/span&gt; &lt;span class="s1"&gt;'stylesheets/[name]-[hash].css'&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'stylesheets/[name].css'&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now we need to generate a file containing our fingerprint in so that Rails can reference it later:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="c1"&gt;// Import external libraries&lt;/span&gt;
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;fs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'fs'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;...&lt;/span&gt;
+
+  &lt;span class="nl"&gt;plugins&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;
+    &lt;span class="p"&gt;...,&lt;/span&gt;
+    &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+      &lt;span class="c1"&gt;// output the fingerprint&lt;/span&gt;
+      &lt;span class="k"&gt;this&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;plugin&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'done'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kd"&gt;function&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;stats&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="kd"&gt;let&lt;/span&gt; &lt;span class="nx"&gt;output&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s1"&gt;'ASSET_FINGERPRINT = "'&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nx"&gt;stats&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;hash&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s1"&gt;'"'&lt;/span&gt;
+        &lt;span class="nx"&gt;fs&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;writeFileSync&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'config/initializers/fingerprint.rb'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nx"&gt;output&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;'utf8'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="p"&gt;})&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;...&lt;/span&gt;
+  &lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let&amp;rsquo;s set up a helper to read from either the fingerprinted asset or our development asset:&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="k"&gt;module&lt;/span&gt; &lt;span class="nn"&gt;ApplicationHelper&lt;/span&gt;
+  &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;fingerprinted_asset&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;name&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;env&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;production?&lt;/span&gt; &lt;span class="p"&gt;?&lt;/span&gt; &lt;span class="s2"&gt;"&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="nb"&gt;name&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;-&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="no"&gt;ASSET_FINGERPRINT&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;"&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nb"&gt;name&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, update our &lt;code&gt;application.html.erb&lt;/code&gt; layout to use our newly created helper:&lt;/p&gt;
+&lt;pre class="highlight erb"&gt;&lt;code&gt;&lt;span class="cp"&gt;&amp;lt;%=&lt;/span&gt; &lt;span class="n"&gt;stylesheet_link_tag&lt;/span&gt;    &lt;span class="n"&gt;fingerprinted_asset&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'application'&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="ss"&gt;media: &lt;/span&gt;&lt;span class="s1"&gt;'all'&lt;/span&gt; &lt;span class="cp"&gt;%&amp;gt;&lt;/span&gt;
+&lt;span class="cp"&gt;&amp;lt;%=&lt;/span&gt; &lt;span class="n"&gt;javascript_include_tag&lt;/span&gt; &lt;span class="n"&gt;fingerprinted_asset&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'application'&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="ss"&gt;async: &lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="no"&gt;Rails&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;env&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;development?&lt;/span&gt; &lt;span class="cp"&gt;%&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;When Rails boots up it will then use this value to reference our asset files.&lt;/p&gt;
+
+&lt;p&gt;A big thanks goes out to &lt;a href="http://pixelatedworks.com/articles/replacing-the-rails-asset-pipeline-with-webpack-and-yarn/"&gt;Samuel Mullen&lt;/a&gt; for the above fingerprinting approach.&lt;/p&gt;
+
+&lt;h4&gt;Deploying to Heroku&lt;/h4&gt;
+
+&lt;p&gt;Now that we have fingerprinting in place, it means that we can use our app in production.  However, there are still a couple of tweaks to be made in order to get it behaving nicely in Heroku.&lt;/p&gt;
+
+&lt;p&gt;First of which, we will need to tell Heroku to install our node modules and compile our assets before compiling our Rails app.  This requires us to install the &lt;a href="https://devcenter.heroku.com/articles/using-multiple-buildpacks-for-an-app"&gt;Nodejs buildpack&lt;/a&gt; and place it above the Ruby buildpack in the list.&lt;/p&gt;
+
+&lt;p&gt;Make sure that the Nodejs buildpack is listed above the Ruby buildpack as we need Heroku to compile our assets and set the fingerprint before building our Ruby app.&lt;/p&gt;
+
+&lt;p&gt;Next we need to monkey patch &lt;code&gt;rake assets:precompile&lt;/code&gt; and &lt;code&gt;rake assets:clean&lt;/code&gt; as these are no longer needed.&lt;/p&gt;
+
+&lt;p&gt;Create the file &lt;code&gt;assets.rake&lt;/code&gt; in your &lt;code&gt;/app/lib/tasks&lt;/code&gt; directory and add the following:&lt;/p&gt;
+&lt;pre class="highlight ruby"&gt;&lt;code&gt;&lt;span class="n"&gt;namespace&lt;/span&gt; &lt;span class="ss"&gt;:assets&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+  &lt;span class="n"&gt;task&lt;/span&gt; &lt;span class="ss"&gt;:precompile&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+    &lt;span class="nb"&gt;puts&lt;/span&gt; &lt;span class="s2"&gt;"Skipping task as not needed."&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+
+  &lt;span class="n"&gt;task&lt;/span&gt; &lt;span class="ss"&gt;:clean&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+    &lt;span class="nb"&gt;puts&lt;/span&gt; &lt;span class="s2"&gt;"Skipping task as not needed."&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, we are going to add the following to our &lt;code&gt;packages.json&lt;/code&gt; file after the &lt;code&gt;dependencies&lt;/code&gt; key:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="s2"&gt;"dependencies"&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+      &lt;span class="p"&gt;...&lt;/span&gt;
+    &lt;span class="p"&gt;},&lt;/span&gt;
+    &lt;span class="s2"&gt;"scripts"&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s2"&gt;"heroku-postbuild"&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s2"&gt;"webpack -p"&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Heroku will read this and run Webpack after installing all of our node packages.&lt;/p&gt;
+
+&lt;h4&gt;Compressing assets&lt;/h4&gt;
+
+&lt;p&gt;One very important point for optimising our web sites, is to gzip assets.  This can be achieved very easily in Webpack through the use of the &lt;code&gt;compression-webpack-plugin&lt;/code&gt; &amp;hellip;plugin.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;yarn add compression-webpack-plugin&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Then we require the plugin and enable it for static assets if in production mode.&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;CompressionPlugin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;require&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'compression-webpack-plugin'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// Gzip assets&lt;/span&gt;
+
+&lt;span class="kr"&gt;const&lt;/span&gt; &lt;span class="nx"&gt;compressFiles&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nx"&gt;prod&lt;/span&gt; &lt;span class="p"&gt;?&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="nx"&gt;CompressionPlugin&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;
+  &lt;span class="na"&gt;asset&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'[path].gz[query]'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+  &lt;span class="na"&gt;algorithm&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;'gzip'&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+  &lt;span class="na"&gt;test&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="sr"&gt;/&lt;/span&gt;&lt;span class="se"&gt;\.&lt;/span&gt;&lt;span class="sr"&gt;js$|&lt;/span&gt;&lt;span class="se"&gt;\.&lt;/span&gt;&lt;span class="sr"&gt;css$|&lt;/span&gt;&lt;span class="se"&gt;\.&lt;/span&gt;&lt;span class="sr"&gt;html$/&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+  &lt;span class="na"&gt;threshold&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;10240&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+  &lt;span class="na"&gt;minRatio&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;0.8&lt;/span&gt;
+&lt;span class="p"&gt;})]&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, we append it to the end of our &lt;code&gt;plugins&lt;/code&gt; array:&lt;/p&gt;
+&lt;pre class="highlight javascript"&gt;&lt;code&gt;  &lt;span class="nx"&gt;plugins&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;
+    &lt;span class="p"&gt;...&lt;/span&gt;
+  &lt;span class="p"&gt;].&lt;/span&gt;&lt;span class="nx"&gt;concat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;compressFiles&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Article code&lt;/h3&gt;
+
+&lt;p&gt;Whilst writing this article, I also built a Rails app to make sure that the code in each step worked correctly.  I have hosted it on github under &lt;a href="https://github.com/krisquigley/webpack-article"&gt;webpack-article&lt;/a&gt;, if you would like to refer to it.&lt;/p&gt;
+
+&lt;p&gt;Your final &lt;code&gt;webpack.config.js&lt;/code&gt; should look like the &lt;a href="https://github.com/krisquigley/webpack-article/blob/master/webpack.config.js"&gt;following&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3&gt;Sources&lt;/h3&gt;
+
+&lt;p&gt;A lot of this article would not have been possible if it were not for the following:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Samuel Mullen - &lt;a href="http://pixelatedworks.com/articles/replacing-the-rails-asset-pipeline-with-webpack-and-yarn/"&gt;Replacing the Rails Asset Pipeline with Webpack and Yarn&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
   <entry>
     <title>Using Docker For Development</title>
     <link rel="alternate" href="http://blog.url.com/2017/01/22/using-docker-for-development-rails.html"/>
     <id>http://blog.url.com/2017/01/22/using-docker-for-development-rails.html</id>
     <published>2017-01-22T00:00:00+00:00</published>
-    <updated>2017-02-08T18:21:27+00:00</updated>
+    <updated>2017-02-08T18:41:35+00:00</updated>
     <author>
       <name>Article Author</name>
     </author>
@@ -395,7 +951,7 @@ docker-compose run web &lt;span class="nv"&gt;$@&lt;/span&gt;
     <link rel="alternate" href="http://blog.url.com/2015/12/08/polling-for-file-generation.html"/>
     <id>http://blog.url.com/2015/12/08/polling-for-file-generation.html</id>
     <published>2015-12-08T00:00:00+00:00</published>
-    <updated>2017-02-08T18:02:04+00:00</updated>
+    <updated>2017-02-08T18:41:35+00:00</updated>
     <author>
       <name>Article Author</name>
     </author>
